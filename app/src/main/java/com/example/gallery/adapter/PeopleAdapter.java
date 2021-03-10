@@ -3,20 +3,14 @@ package com.example.gallery.adapter;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.GridView;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
-
-import com.example.gallery.ViewAlbumActivity;
+import com.example.gallery.activity.ViewAlbumActivity;
 import com.example.gallery.model.Album;
 import com.example.gallery.R;
 
@@ -67,7 +61,7 @@ public class PeopleAdapter extends BaseAdapter {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent((Activity) context, ViewAlbumActivity.class);
-                intent.putExtra("people", list.get(position));
+                intent.putExtra("album", list.get(position));
                 ((Activity) context).startActivity(intent);
             }
         });

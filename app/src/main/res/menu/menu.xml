@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context=".GalleryActivity">
+    tools:context=".activity.GalleryActivity">
     <item
         android:id="@+id/Option1"
-        android:title="Option1"/>
+        android:title="Ẩn ngày tháng"/>
     <item
         android:id="@+id/Option2"
-        android:title="Option2"/>
+        android:title="Sắp xếp theo ngày"/>
+    <item
+        android:id="@+id/Option3"
+        android:title="Sắp xếp size"/>
 </menu>

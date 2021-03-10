@@ -1,6 +1,5 @@
-package com.example.gallery;
+package com.example.gallery.activity;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -10,6 +9,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import com.example.gallery.R;
 import com.example.gallery.model.Item;
 import com.github.chrisbanes.photoview.PhotoView;
 
@@ -32,6 +32,15 @@ public class ViewItemActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent intent = new Intent(ViewItemActivity.this, EditItemActivity.class);
                 intent.putExtra("edit", item);
+                startActivity(intent);
+            }
+        });
+        ImageButton info = findViewById(R.id.info);
+        info.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(ViewItemActivity.this, InfoItemActivity.class);
+                intent.putExtra("info", item);
                 startActivity(intent);
             }
         });

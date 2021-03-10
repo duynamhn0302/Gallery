@@ -1,4 +1,4 @@
-package com.example.gallery;
+package com.example.gallery.activity;
 
 
 import android.os.Bundle;
@@ -62,7 +62,7 @@ public class ViewAlbumActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayShowTitleEnabled(false);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        album = (Album) getIntent().getSerializableExtra("people");
+        album = (Album) getIntent().getSerializableExtra("album");
         TextView name = findViewById(R.id.albumName);
         name.setText(album.getName());
         ArrayList<Item> items = album.getItems();

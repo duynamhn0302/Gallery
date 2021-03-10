@@ -32,6 +32,13 @@
         android:layout_height="wrap_content"
         android:layout_marginVertical="20dp">
         <ImageButton
+            android:id="@+id/info"
+            android:background="@null"
+            android:layout_width="wrap_content"
+            android:layout_weight="1"
+            android:layout_height="30dp"
+            android:src="@drawable/ic_baseline_info_24"/>
+        <ImageButton
             android:background="@null"
             android:layout_width="wrap_content"
             android:layout_weight="1"
@@ -56,12 +63,14 @@
             android:layout_weight="1"
             android:layout_height="30dp"
             android:src="@drawable/ic_baseline_delete_outline_24"/>
+
         <ImageButton
+            android:id="@+id/more"
             android:background="@null"
             android:layout_width="wrap_content"
             android:layout_weight="1"
             android:layout_height="30dp"
-            android:src="@drawable/ic_outline_more_horiz_24"/>
+            android:src="@drawable/ic_outline_pending_24"/>
 
     </LinearLayout>
 

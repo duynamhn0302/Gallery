@@ -9,7 +9,7 @@ import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
 
-import com.example.gallery.ViewItemActivity;
+import com.example.gallery.activity.ViewItemActivity;
 import com.example.gallery.model.Item;
 
 import java.util.ArrayList;

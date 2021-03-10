@@ -1,4 +1,4 @@
-package com.example.gallery;
+package com.example.gallery.activity;
 
 import android.os.Bundle;
 
@@ -6,6 +6,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import com.example.gallery.R;
 import com.example.gallery.model.Album;
 import com.example.gallery.model.Item;
 import com.github.chrisbanes.photoview.PhotoView;

@@ -12,8 +12,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.gallery.ViewAlbumActivity;
-import com.example.gallery.ViewItemActivity;
+import com.example.gallery.activity.PrivateAlbumActivity;
+import com.example.gallery.activity.ViewAlbumActivity;
 import com.example.gallery.model.Album;
 import com.example.gallery.R;
 
@@ -48,8 +48,8 @@ public class AlbumAdapter extends RecyclerView.Adapter {
         viewHolder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent((Activity) context, ViewAlbumActivity.class);
-                intent.putExtra("people", list.get(position));
+                Intent intent = new Intent((Activity) context, PrivateAlbumActivity.class);
+                intent.putExtra("album", list.get(position));
                 ((Activity) context).startActivity(intent);
             }
         });

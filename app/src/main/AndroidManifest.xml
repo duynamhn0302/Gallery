@@ -9,20 +9,20 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Design.NoActionBar">
-        <activity android:name=".GalleryActivity">
+        <activity android:name=".activity.GalleryActivity">
 
         </activity>
-        <activity android:name=".ViewItemActivity"
+        <activity android:name=".activity.ViewItemActivity"
             android:theme="@style/Theme.MaterialComponents.NoActionBar.Bridge">
 
 
         </activity>
-        <activity android:name=".EditItemActivity"
+        <activity android:name=".activity.EditItemActivity"
             android:theme="@style/Theme.MaterialComponents.NoActionBar.Bridge">
 
 
         </activity>
-        <activity android:name=".ViewAlbumActivity">
+        <activity android:name=".activity.ViewAlbumActivity">
 
         </activity>
         <activity android:name=".MainActivity" >
@@ -31,6 +31,11 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+        <activity android:name=".activity.InfoItemActivity" />
+        <activity android:name=".activity.PrivateAlbumActivity"
+            android:windowSoftInputMode="adjustResize">
+
         </activity>
     </application>
     <uses-feature android:name="android.hardware.camera.any" />

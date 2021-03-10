@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/cardview_dark_background"
+    >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingTop="30dp">
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_baseline_lock_24"
+            android:id="@+id/src_icon"
+            android:layout_marginBottom="10dp"
+            android:layout_marginTop="20dp"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Thư mục bảo mật"
+            android:textColor="@color/white"
+            android:textSize="30dp"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:layout_alignParentBottom="true"
+        android:orientation="vertical"
+        android:paddingBottom="40dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Nhập mã pin để mở khoá"
+            android:textSize="20sp"
+            android:textColor="@color/white"
+            android:layout_marginBottom="15dp"/>
+
+        <EditText
+            android:layout_width="200dp"
+            android:layout_height="50dp"
+            android:background="@drawable/edit_text_bg"
+            android:gravity="center"
+            android:inputType="numberPassword"
+            android:padding="10dp"
+            android:textColor="#5e5e5e"
+            android:maxLength="4"/>
+        <ImageButton
+            android:padding="10dp"
+            android:id="@+id/unlock"
+            android:layout_margin="30dp"
+            android:background="@drawable/button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_baseline_lock_open_24"/>
+
+    </LinearLayout>
+
+</RelativeLayout>

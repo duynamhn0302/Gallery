@@ -1,4 +1,4 @@
-package com.example.gallery;
+package com.example.gallery.activity;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.example.gallery.R;
 import com.example.gallery.fragment.Fragment1;
 import com.example.gallery.fragment.Fragment2;
 import com.example.gallery.fragment.Fragment3;
