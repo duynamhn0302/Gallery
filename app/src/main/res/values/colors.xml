@@ -10,4 +10,5 @@
     <color name="colorPrimary">#795548</color>
     <color name="colorPrimaryDark">#5D4037</color>
     <color name="colorAccent">#CDDC39</color>
+    <color name="colorPlayAndDuration">#5E5E5E</color>
 </resources>

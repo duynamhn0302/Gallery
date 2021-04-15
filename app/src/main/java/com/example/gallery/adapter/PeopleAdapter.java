@@ -10,6 +10,7 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
 import com.example.gallery.activity.ViewAlbumActivity;
 import com.example.gallery.model.Album;
 import com.example.gallery.R;
@@ -54,7 +55,7 @@ public class PeopleAdapter extends BaseAdapter {
         TextView albumName = (TextView) view.findViewById(R.id.albumName);
         TextView countItems = (TextView) view.findViewById(R.id.countItems);
 
-        item.setImageResource(list.get(position).getMainItem().getDrawableVal());
+        Glide.with(context).load(list.get(position).getMainItem().getFilePath()).into(item);
         albumName.setText(list.get(position).getName());
         countItems.setText(Integer.toString(list.get(position).getCount()));
         view.setOnClickListener(new View.OnClickListener() {

@@ -25,7 +25,6 @@ public class AlbumDetailAdapter extends RecyclerView.Adapter{
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-
         Context context = parent.getContext();
         LayoutInflater inflater = LayoutInflater.from(context);
         View albumDetailView = inflater.inflate(R.layout.items_by_date, parent, false);
@@ -52,7 +51,6 @@ public class AlbumDetailAdapter extends RecyclerView.Adapter{
             super(itemView);
             date = itemView.findViewById(R.id.date);
             gridView = itemView.findViewById(R.id.gridView);
-
         }
     }
     public void setGridViewHeightBasedOnChildren(GridView gridView, int columns) {

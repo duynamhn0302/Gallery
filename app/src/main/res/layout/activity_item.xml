@@ -20,13 +20,12 @@
     </androidx.appcompat.widget.Toolbar>
 
 
-    <com.github.chrisbanes.photoview.PhotoView
-        android:id="@+id/image"
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/imagesSlider"
         android:layout_weight="1"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"/>
 
-    </com.github.chrisbanes.photoview.PhotoView>
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

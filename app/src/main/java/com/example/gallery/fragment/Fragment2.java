@@ -20,18 +20,20 @@ import java.util.ArrayList;
 public class Fragment2 extends androidx.fragment.app.Fragment {
 
     ArrayList<Album> albums = new ArrayList<>();
+    private ArrayList<Item> items = new ArrayList<>();
     AlbumAdapter adapter;
     RecyclerView recyclerView;
     public Fragment2() {
         // Required empty public constructor
     }
 
+    public Fragment2(ArrayList<Item> items) {
+        this.items.clear();
+        this.items.addAll(items);
+    }
+
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         albums.clear();
-        for (int i = 1; i <= 10; i++) {
-            albums.add(new Album("Album"+i, new Item(R.drawable.abc)));
-        }
-
         adapter = new AlbumAdapter(albums, getContext());
 
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext());

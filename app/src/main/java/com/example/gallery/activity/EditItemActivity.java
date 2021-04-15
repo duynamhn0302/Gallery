@@ -6,6 +6,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import com.bumptech.glide.Glide;
 import com.example.gallery.R;
 import com.example.gallery.model.Album;
 import com.example.gallery.model.Item;
@@ -19,7 +20,7 @@ public class EditItemActivity extends AppCompatActivity {
         
         PhotoView imageView = (PhotoView)findViewById(R.id.image);
         Item item = (Item) getIntent().getSerializableExtra("edit");
-        imageView.setImageResource(item.getDrawableVal());
+        Glide.with(this).load(item.getFilePath()).fitCenter().into(imageView);
 
 
     }
