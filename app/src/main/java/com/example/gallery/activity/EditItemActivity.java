@@ -17,7 +17,7 @@ public class EditItemActivity extends AppCompatActivity {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_edit_item);
-        
+
         PhotoView imageView = (PhotoView)findViewById(R.id.image);
         Item item = (Item) getIntent().getSerializableExtra("edit");
         Glide.with(this).load(item.getFilePath()).fitCenter().into(imageView);

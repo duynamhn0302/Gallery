@@ -1,14 +1,11 @@
 package com.example.gallery.fragment;
 
-import android.app.Activity;
 import android.os.Bundle;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.MediaController;
-import android.widget.Toast;
 import android.widget.VideoView;
 
 import androidx.annotation.NonNull;
@@ -17,8 +14,9 @@ import androidx.fragment.app.Fragment;
 
 import com.bumptech.glide.Glide;
 import com.example.gallery.R;
-import com.example.gallery.activity.GalleryActivity;
+import com.example.gallery.activity.MainActivity;
 import com.example.gallery.model.Item;
+import com.github.chrisbanes.photoview.PhotoView;
 
 public class ScreenSlidePageFragment extends Fragment {
     private Item item;
@@ -37,8 +35,8 @@ public class ScreenSlidePageFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        if (GalleryActivity.isImageFile(item.getFilePath())) {
-            ImageView imageView = (ImageView) view.findViewById(R.id.imageOnSlide);
+        if (MainActivity.isImageFile(item.getFilePath())) {
+            PhotoView imageView =  view.findViewById(R.id.imageOnSlide);
             Glide.with(this).load(item.getFilePath()).into(imageView);
         }else {
             VideoView videoView = (VideoView) view.findViewById(R.id.videoOnSlide);

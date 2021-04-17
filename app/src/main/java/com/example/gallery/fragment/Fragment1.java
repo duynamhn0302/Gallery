@@ -6,25 +6,17 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.GridView;
-import android.widget.LinearLayout;
-import android.widget.ListAdapter;
-import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.gallery.R;
-import com.example.gallery.activity.GalleryActivity;
-import com.example.gallery.adapter.AlbumAdapter;
 import com.example.gallery.adapter.AlbumDetailAdapter;
 import com.example.gallery.adapter.DateAdapter;
-import com.example.gallery.model.Album;
 import com.example.gallery.model.Item;
 
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
 
 public class Fragment1 extends androidx.fragment.app.Fragment {
     AlbumDetailAdapter albumDetailAdapter;

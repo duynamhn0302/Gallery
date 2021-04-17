@@ -27,7 +27,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
-
+import android.provider.MediaStore.MediaColumns;
 import com.example.gallery.R;
 import com.example.gallery.fragment.Fragment1;
 import com.example.gallery.fragment.Fragment2;
@@ -42,7 +42,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public class GalleryActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity {
     TabLayout tabLayout;
     ViewPager viewPager;
     static ArrayList<Item> items = new ArrayList<>();
@@ -105,10 +105,7 @@ public class GalleryActivity extends AppCompatActivity {
         loadAllFiles(items);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayShowTitleEnabled(false);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         tabLayout = (TabLayout) findViewById(R.id.tab_layout);
-        getSupportActionBar().setDisplayShowTitleEnabled(false);
         viewPager = (ViewPager) findViewById(R.id.view_pager);
         PagerAdapter adapter = new PagerAdapter(getSupportFragmentManager());
         adapter.addFragment(new Fragment1(items), "Ảnh/Video");
@@ -174,22 +171,31 @@ public class GalleryActivity extends AppCompatActivity {
             Long durationNum = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DURATION));
             String addedDate = DateFormat.format("dd/MM/yyyy", new Date(longDate * 1000)).toString();
 
-            ExifInterface exif = new ExifInterface(absolutePathOfFile);
-            float[] latLng = new float[2];
-            exif.getLatLong(latLng);
+            ExifInterface exif;
+            try{
 
-            Geocoder geocoder = new Geocoder(this);
-            List<Address> addresses = geocoder.getFromLocation(latLng[0], latLng[1], 1);
+                exif = new ExifInterface(absolutePathOfFile);
+                float[] latLng = new float[2];
+                exif.getLatLong(latLng);
 
-            for (Address add : addresses) {
-                String address = addresses.get(0).getAddressLine(0);
+                Geocoder geocoder = new Geocoder(this);
+                List<Address> addresses = geocoder.getFromLocation(latLng[0], latLng[1], 1);
+
+                for (Address add : addresses) {
+                    String address = addresses.get(0).getAddressLine(0);
+                }
+
+                if (isImageFile(absolutePathOfFile))
+                    items.add(new Item(absolutePathOfFile, true, addedDate));
+                if (isVideoFile(absolutePathOfFile)) {
+                    items.add(new Item(absolutePathOfFile, false, addedDate, convertToDuration(durationNum)));
+                }
+            }
+            catch (Exception ex){
+               // ex.printStackTrace();
+                System.out.println(absolutePathOfFile);
             }
 
-            if (isImageFile(absolutePathOfFile))
-                items.add(new Item(absolutePathOfFile, true, addedDate));
-            if (isVideoFile(absolutePathOfFile)) {
-                items.add(new Item(absolutePathOfFile, false, addedDate, convertToDuration(durationNum)));
-            }
         }
         cursor.close();
     }
