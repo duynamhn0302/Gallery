@@ -4,7 +4,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -13,18 +12,15 @@ import androidx.loader.content.CursorLoader;
 import androidx.viewpager.widget.ViewPager;
 
 import android.Manifest;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.location.Address;
 import android.location.Geocoder;
 import android.media.ExifInterface;
-import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.text.format.DateFormat;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
@@ -36,7 +32,6 @@ import com.example.gallery.fragment.Fragment3;
 import com.example.gallery.model.Item;
 import com.google.android.material.tabs.TabLayout;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -44,13 +39,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public class GalleryActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity {
     TabLayout tabLayout;
     ViewPager viewPager;
     static ArrayList<Item> items = new ArrayList<>();
     private static final int READ_PERMISSION_CODE = 100;
     private static final int LOCATION_PERMISSION_CODE = 200;
-    private static final int ALL_PERMISSIONS = 101;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -107,10 +101,7 @@ public class GalleryActivity extends AppCompatActivity {
         loadAllFiles(items);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayShowTitleEnabled(false);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         tabLayout = (TabLayout) findViewById(R.id.tab_layout);
-        getSupportActionBar().setDisplayShowTitleEnabled(false);
         viewPager = (ViewPager) findViewById(R.id.view_pager);
         PagerAdapter adapter = new PagerAdapter(getSupportFragmentManager());
         adapter.addFragment(new Fragment1(items), "Ảnh/Video");
@@ -129,8 +120,6 @@ public class GalleryActivity extends AppCompatActivity {
             requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, READ_PERMISSION_CODE);
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
             requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION_CODE);
-//        final String[] permissions = new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.ACCESS_FINE_LOCATION};
-//        ActivityCompat.requestPermissions(this, permissions, ALL_PERMISSIONS);
         try {
             init();
         } catch (IOException e) {
@@ -176,16 +165,30 @@ public class GalleryActivity extends AppCompatActivity {
             Long durationNum = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DURATION));
             String addedDate = DateFormat.format("dd/MM/yyyy", new Date(longDate * 1000)).toString();
 
-            if (isImageFile(absolutePathOfFile))
-                items.add(new Item(absolutePathOfFile, true, addedDate));
-            if (isVideoFile(absolutePathOfFile)) {
-                items.add(new Item(absolutePathOfFile, false, addedDate, convertToDuration(durationNum)));
-            }
+            ExifInterface exif;
+            try{
 
-//            File file = new File(absolutePathOfFile);
-//            MediaScannerConnection.scanFile(this,
-//                    new String[]{file.toString()},
-//                    null, null);
+                exif = new ExifInterface(absolutePathOfFile);
+                float[] latLng = new float[2];
+                exif.getLatLong(latLng);
+
+                Geocoder geocoder = new Geocoder(this);
+                List<Address> addresses = geocoder.getFromLocation(latLng[0], latLng[1], 1);
+
+                for (Address add : addresses) {
+                    String address = addresses.get(0).getAddressLine(0);
+                }
+
+                if (isImageFile(absolutePathOfFile))
+                    items.add(new Item(absolutePathOfFile, true, addedDate));
+                if (isVideoFile(absolutePathOfFile)) {
+                    items.add(new Item(absolutePathOfFile, false, addedDate, convertToDuration(durationNum)));
+                }
+            }
+            catch (Exception ex){
+               // ex.printStackTrace();
+                System.out.println(absolutePathOfFile);
+            }
         }
         cursor.close();
     }
