@@ -2,4 +2,14 @@
 <resources>
     <string name="_4_30">4:30</string>
     <string name="todo">TODO</string>
+    <string name="item_detail_title">Thông tin chi tiết</string>
+    <string name="item_detail_added_date">Thời gian chụp</string>
+    <string name="item_detail_added_date_sample">Ngày 1 tháng 1 năm 2021</string>
+    <string name="item_detail_name">Thông tin tệp</string>
+    <string name="item_detail_name_sample">abc.jpg</string>
+    <string name="item_detail_specification_sample">100KB 1080x2340px</string>
+    <string name="item_detail_path">Đường dẫn</string>
+    <string name="item_detail_path_sample">DCIM/abc.jpg</string>
+    <string name="item_detail_location">Vị trí</string>
+    <string name="item_detail_location_sample">TP HCM</string>
 </resources>

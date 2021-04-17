@@ -1,8 +1,6 @@
 package com.example.gallery.fragment;
 
-import android.app.Activity;
 import android.os.Bundle;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -35,6 +33,15 @@ public class ScreenSlidePageFragment extends Fragment {
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        VideoView videoView = (VideoView) getView().findViewById(R.id.videoOnSlide);
+        if (videoView != null) {
+            videoView.seekTo(1);
+        }
+    }
+
+    @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         if (GalleryActivity.isImageFile(item.getFilePath())) {
@@ -44,6 +51,7 @@ public class ScreenSlidePageFragment extends Fragment {
             VideoView videoView = (VideoView) view.findViewById(R.id.videoOnSlide);
             MediaController mediaController = new MediaController(getContext());
             videoView.setMediaController(mediaController);
+            mediaController.setAnchorView(videoView);
             videoView.setVideoPath(item.getFilePath());
             videoView.seekTo(1);
         }

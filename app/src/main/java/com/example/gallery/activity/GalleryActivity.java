@@ -19,6 +19,7 @@ import android.database.Cursor;
 import android.location.Address;
 import android.location.Geocoder;
 import android.media.ExifInterface;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -35,6 +36,7 @@ import com.example.gallery.fragment.Fragment3;
 import com.example.gallery.model.Item;
 import com.google.android.material.tabs.TabLayout;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -137,7 +139,7 @@ public class GalleryActivity extends AppCompatActivity {
     }
 
     // load all files from internal storage to array items
-    public void loadAllFiles(ArrayList<Item> items) throws IOException {
+    public void loadAllFiles(ArrayList<Item> items) {
         items.clear();
         String[] projection = {
                 MediaStore.Files.FileColumns._ID,
@@ -174,22 +176,16 @@ public class GalleryActivity extends AppCompatActivity {
             Long durationNum = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DURATION));
             String addedDate = DateFormat.format("dd/MM/yyyy", new Date(longDate * 1000)).toString();
 
-            ExifInterface exif = new ExifInterface(absolutePathOfFile);
-            float[] latLng = new float[2];
-            exif.getLatLong(latLng);
-
-            Geocoder geocoder = new Geocoder(this);
-            List<Address> addresses = geocoder.getFromLocation(latLng[0], latLng[1], 1);
-
-            for (Address add : addresses) {
-                String address = addresses.get(0).getAddressLine(0);
-            }
-
             if (isImageFile(absolutePathOfFile))
                 items.add(new Item(absolutePathOfFile, true, addedDate));
             if (isVideoFile(absolutePathOfFile)) {
                 items.add(new Item(absolutePathOfFile, false, addedDate, convertToDuration(durationNum)));
             }
+
+//            File file = new File(absolutePathOfFile);
+//            MediaScannerConnection.scanFile(this,
+//                    new String[]{file.toString()},
+//                    null, null);
         }
         cursor.close();
     }

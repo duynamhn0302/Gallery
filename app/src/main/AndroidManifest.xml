@@ -17,6 +17,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Design.NoActionBar"
         android:requestLegacyExternalStorage="true">
+
         <activity android:name=".activity.GalleryActivity">
 
         </activity>
@@ -45,6 +46,16 @@
             android:windowSoftInputMode="adjustResize">
 
         </activity>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.example.gallery.provider"
+            android:grantUriPermissions="true"
+            android:exported="false">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/filepaths" />
+        </provider>
     </application>
     <uses-feature android:name="android.hardware.camera.any" />
     <uses-permission android:name="android.permission.CAMERA" />
