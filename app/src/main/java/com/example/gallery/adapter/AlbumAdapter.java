@@ -14,7 +14,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.example.gallery.activity.PrivateAlbumActivity;
-import com.example.gallery.activity.ViewAlbumActivity;
 import com.example.gallery.model.Album;
 import com.example.gallery.R;
 
@@ -45,7 +44,7 @@ public class AlbumAdapter extends RecyclerView.Adapter {
         ViewHolder viewHolder = (ViewHolder) holder;
         viewHolder.albumName.setText(album.getName());
         viewHolder.countItems.setText(Integer.toString(album.getCount()));
-        Glide.with(context).load(album.getMainItem().getFilePath()).into(viewHolder.item);
+        Glide.with(context).load(album.getMainImage().getFilePath()).into(viewHolder.item);
         viewHolder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.gallery.R;
 import com.example.gallery.adapter.AlbumDetailAdapter;
 import com.example.gallery.adapter.DateAdapter;
+import com.example.gallery.model.Image;
 import com.example.gallery.model.Item;
 
 import java.util.ArrayList;

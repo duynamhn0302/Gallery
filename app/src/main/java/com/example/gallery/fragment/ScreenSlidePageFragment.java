@@ -4,7 +4,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.MediaController;
 import android.widget.VideoView;
 
@@ -15,6 +14,7 @@ import androidx.fragment.app.Fragment;
 import com.bumptech.glide.Glide;
 import com.example.gallery.R;
 import com.example.gallery.activity.MainActivity;
+import com.example.gallery.model.Image;
 import com.example.gallery.model.Item;
 import com.github.chrisbanes.photoview.PhotoView;
 
@@ -27,7 +27,7 @@ public class ScreenSlidePageFragment extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        if (item.getIsImage())
+        if (item.isImage())
             return (ViewGroup) inflater.inflate(R.layout.image_on_slide, container, false);
         return (ViewGroup) inflater.inflate(R.layout.video_on_slide, container, false);
     }

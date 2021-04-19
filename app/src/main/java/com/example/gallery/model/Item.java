@@ -1,13 +1,24 @@
 package com.example.gallery.model;
 
+
+import android.content.Context;
+import android.net.Uri;
+
 import androidx.annotation.Nullable;
 
 import java.io.Serializable;
 
-public class Item implements Serializable {
-    private String filePath, addedDate, duration;
-    private boolean isImage;
+public abstract class Item implements Serializable {
 
+    protected String filePath, addedDate, location;
+    protected Uri uri;
+    protected boolean isImage;
+    Item(){
+
+    }
+    Item(Uri uri){
+        this.uri = uri;
+    }
     @Override
     public boolean equals(@Nullable Object obj) {
         if (this == obj) return true;
@@ -15,47 +26,69 @@ public class Item implements Serializable {
         Item item = (Item) obj;
         return filePath.equals(((Item) obj).getFilePath());
     }
-
-    public Item() {
-
-    }
-
-    public Item(String filePath, boolean isImage){
-        this.filePath = filePath;
-        this.isImage = isImage;
-    }
-
-    public Item(String filePath, boolean isImage, String addedDate){
-        this.filePath = filePath;
-        this.isImage = isImage;
+    public void setAddedDate(String addedDate) {
         this.addedDate = addedDate;
-        this.duration = "0:0";
     }
 
-    public Item(String filePath, boolean isImage, String addedDate, String duration){
-        this.filePath = filePath;
-        this.isImage = isImage;
-        this.addedDate = addedDate;
-        this.duration = duration;
+    public void setLocation(String location) {
+        this.location = location;
     }
 
-    public void setFilePath(String filePath) {
-        this.filePath = filePath;
+    public void setUri(Uri uri) {
+        this.uri = uri;
     }
 
-    public void setIsImage(boolean isImage) { this.isImage = isImage; }
+    public String getLocation() {
+        return location;
+    }
+
+    public Uri getUri() {
+        return uri;
+    }
+
+    public String getAddedDate() {
+        return addedDate;
+    }
+
 
     public String getFilePath() {
         return filePath;
     }
 
-    public boolean getIsImage() { return isImage; }
+    public boolean isImage() {
+        return isImage;
+    }
 
-    public void setAddedDate(String addedDate) { this.addedDate = addedDate; }
+    public void setImage(boolean image) {
+        isImage = image;
+    }
 
-    public String getAddedDate() { return  addedDate; }
 
-    public void setDuration(String duration) { this.duration = duration; }
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
+    }
+    public static Item getInstance(final Context context, Uri uri, String mimeType) {
+        if (uri == null) {
+            return null;
+        }
 
-    public String getDuration() { return this.duration; }
+        Item albumItem = null;
+        if (MediaType.checkImageMimeType(mimeType)) {
+            albumItem = new Image(uri) {
+            };
+        } else if (MediaType.checkVideoMimeType(mimeType)) {
+            albumItem = new Video(uri);
+        }
+
+        if (albumItem != null) {
+            albumItem.setFilePath(uri.getPath());
+            albumItem.setUri(uri);
+
+        }
+        return albumItem;
+    }
+    public void setDuration(String duration) {  }
+
+    public String getDuration() {  return "";}
+
 }

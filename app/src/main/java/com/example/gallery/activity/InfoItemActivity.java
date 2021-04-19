@@ -8,14 +8,13 @@ import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.exifinterface.media.ExifInterface;
 
 import com.example.gallery.R;
-import com.example.gallery.model.Item;
+import com.example.gallery.model.Image;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,7 +37,7 @@ public class InfoItemActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayShowTitleEnabled(false);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        Item item = (Item) getIntent().getSerializableExtra("info");
+        Image image = (Image) getIntent().getSerializableExtra("info");
 
         added_date = (TextView) findViewById(R.id.added_date);
         item_name = (TextView) findViewById(R.id.item_name);
@@ -49,7 +48,7 @@ public class InfoItemActivity extends AppCompatActivity {
 
         ExifInterface exif = null;
         try {
-            exif = new ExifInterface(item.getFilePath());
+            exif = new ExifInterface(image.getFilePath());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -77,8 +76,8 @@ public class InfoItemActivity extends AppCompatActivity {
         }
 
         //Read image resolution
-        if (item.getIsImage()) {
-            Bitmap bitmap = BitmapFactory.decodeFile(item.getFilePath());
+        if (image.getIsImage()) {
+            Bitmap bitmap = BitmapFactory.decodeFile(image.getFilePath());
             int image_height = bitmap.getHeight();
             int image_width = bitmap.getWidth();
             String resolution = String.valueOf(image_width) + "x" + String.valueOf(image_height);
@@ -88,7 +87,7 @@ public class InfoItemActivity extends AppCompatActivity {
         else {
             //Read video resolution
             MediaMetadataRetriever metaRetriever = new MediaMetadataRetriever();
-            metaRetriever.setDataSource(item.getFilePath());
+            metaRetriever.setDataSource(image.getFilePath());
             String video_height = metaRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
             String video_width = metaRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
             String resolution = video_width + "x" + video_height;
@@ -97,10 +96,10 @@ public class InfoItemActivity extends AppCompatActivity {
         }
 
         //Read file added date
-        added_date.setText(item.getAddedDate());
+        added_date.setText(image.getAddedDate());
 
         //Read file name, path
-        File file = new File(item.getFilePath());
+        File file = new File(image.getFilePath());
         String strFileName = file.getName();
         String strFilePath = file.getParent();
         item_name.setText(strFileName);

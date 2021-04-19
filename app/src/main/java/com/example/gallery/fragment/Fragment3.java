@@ -8,14 +8,12 @@ import android.view.ViewGroup;
 import android.widget.GridView;
 
 import androidx.annotation.Nullable;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.gallery.adapter.PeopleAdapter;
 import com.example.gallery.model.Album;
-import com.example.gallery.adapter.AlbumAdapter;
-import com.example.gallery.model.Item;
+import com.example.gallery.model.Image;
 import com.example.gallery.R;
+import com.example.gallery.model.Item;
 
 import java.util.ArrayList;
 

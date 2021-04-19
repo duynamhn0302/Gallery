@@ -2,11 +2,8 @@ package com.example.gallery.activity;
 
 
 import android.os.Bundle;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
@@ -18,10 +15,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.gallery.adapter.AlbumDetailAdapter;
 import com.example.gallery.adapter.DateAdapter;
 import com.example.gallery.model.Album;
-import com.example.gallery.adapter.AlbumAdapter;
-import com.example.gallery.model.Item;
+import com.example.gallery.model.Image;
 import com.example.gallery.R;
-import com.github.chrisbanes.photoview.PhotoView;
+import com.example.gallery.model.Item;
 
 import java.util.ArrayList;
 
@@ -65,10 +61,10 @@ public class ViewAlbumActivity extends AppCompatActivity {
         album = (Album) getIntent().getSerializableExtra("album");
         TextView name = findViewById(R.id.albumName);
         name.setText(album.getName());
-        ArrayList<Item> items = album.getItems();
+        ArrayList<Item> items = album.getImages();
         ArrayList<DateAdapter> adapters = new ArrayList<>();
         for(int i = 0; i < 4; i++){
-            adapters.add(new DateAdapter("Ngay 1/1/2021",items, this));
+            adapters.add(new DateAdapter("Ngay 1/1/2021", items, this));
         }
         albumDetailAdapter = new AlbumDetailAdapter(adapters, this);
 

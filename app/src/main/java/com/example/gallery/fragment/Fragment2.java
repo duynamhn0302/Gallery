@@ -12,8 +12,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.gallery.model.Album;
 import com.example.gallery.adapter.AlbumAdapter;
-import com.example.gallery.model.Item;
+import com.example.gallery.model.Image;
 import com.example.gallery.R;
+import com.example.gallery.model.Item;
 
 import java.util.ArrayList;
 

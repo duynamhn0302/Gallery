@@ -6,30 +6,30 @@ import java.util.ArrayList;
 
 public class Album implements Serializable {
     private String name;
-    private Item mainItem;
+    private Item mainImage;
     private ArrayList<Item> items = new ArrayList<>();
     public Album(String name){
         this.name = name;
     }
-    public Album(String name,Item mainItem){
+    public Album(String name, Item mainImage){
         this.name = name;
-        this.mainItem = mainItem;
-        items.add(mainItem);
+        this.mainImage = mainImage;
+        items.add(mainImage);
     }
 
-    public void addItem(Item item){
-        items.add(item);
+    public void addItem(Image image){
+        items.add(image);
     }
 
-    public Item getMainItem() {
-        return mainItem;
+    public Item getMainImage() {
+        return mainImage;
     }
 
-    public void setMainItem(Item mainItem) {
-        this.mainItem = mainItem;
+    public void setMainImage(Item mainImage) {
+        this.mainImage = mainImage;
     }
 
-    public ArrayList<Item> getItems() {
+    public ArrayList<Item> getImages() {
         return items;
     }
 
@@ -37,8 +37,8 @@ public class Album implements Serializable {
         return name;
     }
 
-    public void setItems(ArrayList<Item> items) {
-        this.items = items;
+    public void setImages(ArrayList<Item> images) {
+        this.items = images;
     }
 
     public void setName(String name) {

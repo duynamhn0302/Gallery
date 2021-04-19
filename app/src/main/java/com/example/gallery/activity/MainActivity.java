@@ -12,13 +12,16 @@ import androidx.loader.content.CursorLoader;
 import androidx.viewpager.widget.ViewPager;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.icu.text.SimpleDateFormat;
 import android.location.Address;
 import android.location.Geocoder;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.text.format.DateFormat;
 import android.view.Menu;
@@ -29,9 +32,12 @@ import com.example.gallery.R;
 import com.example.gallery.fragment.Fragment1;
 import com.example.gallery.fragment.Fragment2;
 import com.example.gallery.fragment.Fragment3;
+import com.example.gallery.model.Image;
 import com.example.gallery.model.Item;
+import com.example.gallery.model.Video;
 import com.google.android.material.tabs.TabLayout;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -42,15 +48,66 @@ import java.util.concurrent.TimeUnit;
 public class MainActivity extends AppCompatActivity {
     TabLayout tabLayout;
     ViewPager viewPager;
+    String[] listPermissions=new String[]{Manifest.permission.CAMERA};
     static ArrayList<Item> items = new ArrayList<>();
     private static final int READ_PERMISSION_CODE = 100;
     private static final int LOCATION_PERMISSION_CODE = 200;
-
+    private static final int CAMERA_PERMISSION_CODE = 300;
+    static final int REQUEST_IMAGE_CAPTURE = 1;
+    boolean checkPermission(String per){
+        if(ContextCompat.checkSelfPermission(this,per)!=PackageManager.PERMISSION_GRANTED){
+            return false;
+        }
+        return true;
+    }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu, menu);
         return true;
+    }
+    String currentPhotoPath;
+
+
+
+
+    private void dispatchTakePictureIntent() {
+        Intent i = new Intent();
+        i.setAction(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA_SECURE);
+        if (i.resolveActivity(getPackageManager()) != null) {
+            startActivity(i);
+        } else {
+            Toast.makeText(MainActivity.this, "ád", Toast.LENGTH_SHORT).show();
+        }
+    }
+    private void galleryAddPic() {
+        Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        File f = new File(currentPhotoPath);
+        Uri contentUri = Uri.fromFile(f);
+        mediaScanIntent.setData(contentUri);
+        this.sendBroadcast(mediaScanIntent);
+
+    }
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        super.onActivityResult(requestCode, resultCode, data);
+        galleryAddPic();
+        System.out.println(currentPhotoPath);
+        if (resultCode == RESULT_OK) {
+            if (requestCode == REQUEST_IMAGE_CAPTURE) {
+
+                galleryAddPic();
+
+                // here you will get the image as bitmap
+
+
+            } else if (resultCode == RESULT_CANCELED) {
+                Toast.makeText(this, "Picture was not taken", Toast.LENGTH_SHORT);
+            }
+        }
+
+
     }
 
     @Override
@@ -60,6 +117,17 @@ public class MainActivity extends AppCompatActivity {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         //noinspection SimplifiableIfStatement
+        switch(id){
+            case R.id.camera:
+                if(!checkPermission(Manifest.permission.CAMERA)||!checkPermission(Manifest.permission.READ_CONTACTS))
+                {
+                    this.requestPermissions(listPermissions,CAMERA_PERMISSION_CODE);
+                }else {
+                    dispatchTakePictureIntent();
+                }
+
+                break;
+        }
         return super.onOptionsItemSelected(item);
     }
 
@@ -94,11 +162,21 @@ public class MainActivity extends AppCompatActivity {
                     finish();
                 }
                 break;
+            case CAMERA_PERMISSION_CODE:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(this, "Camera permission granted", Toast.LENGTH_SHORT).show();
+                    dispatchTakePictureIntent();
+                } else {
+                    Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show();
+
+                }
+                break;
         }
     }
 
     public void init() throws IOException {
-        loadAllFiles(items);
+        loadAllFiles();
+
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         tabLayout = (TabLayout) findViewById(R.id.tab_layout);
@@ -128,7 +206,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // load all files from internal storage to array items
-    public void loadAllFiles(ArrayList<Item> items) {
+    public void loadAllFiles() {
         items.clear();
         String[] projection = {
                 MediaStore.Files.FileColumns._ID,
@@ -180,9 +258,9 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 if (isImageFile(absolutePathOfFile))
-                    items.add(new Item(absolutePathOfFile, true, addedDate));
+                    items.add(new Image(absolutePathOfFile,  addedDate));
                 if (isVideoFile(absolutePathOfFile)) {
-                    items.add(new Item(absolutePathOfFile, false, addedDate, convertToDuration(durationNum)));
+                    items.add(new Video(absolutePathOfFile,  addedDate, convertToDuration(durationNum)));
                 }
             }
             catch (Exception ex){
@@ -216,8 +294,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public ArrayList<Item> getItems() {
-        ArrayList<Item> allItems = new ArrayList<Item>(items);
-        return allItems;
+        ArrayList<Item> allImages = new ArrayList<Item>(items);
+        return allImages;
     }
 
     private class PagerAdapter extends FragmentPagerAdapter {

@@ -55,7 +55,7 @@ public class PeopleAdapter extends BaseAdapter {
         TextView albumName = (TextView) view.findViewById(R.id.albumName);
         TextView countItems = (TextView) view.findViewById(R.id.countItems);
 
-        Glide.with(context).load(list.get(position).getMainItem().getFilePath()).into(item);
+        Glide.with(context).load(list.get(position).getMainImage().getFilePath()).into(item);
         albumName.setText(list.get(position).getName());
         countItems.setText(Integer.toString(list.get(position).getCount()));
         view.setOnClickListener(new View.OnClickListener() {

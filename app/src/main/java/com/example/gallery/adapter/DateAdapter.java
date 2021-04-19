@@ -3,7 +3,6 @@ package com.example.gallery.adapter;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.media.MediaPlayer;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,12 +12,11 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
-import android.widget.VideoView;
 
 import com.bumptech.glide.Glide;
 import com.example.gallery.R;
 import com.example.gallery.activity.ViewItemActivity;
+import com.example.gallery.model.Image;
 import com.example.gallery.model.Item;
 
 import java.util.ArrayList;
@@ -36,7 +34,7 @@ public class DateAdapter extends BaseAdapter {
     public DateAdapter(String date, ArrayList<Item> items, Context context) {
         this.date = date;
         this.context = context;
-        this.items = new ArrayList<Item>();
+        this.items = new ArrayList<>();
         for (Item i : items) {
             if (date.equals(i.getAddedDate())) {
                 this.items.add(i);
@@ -44,7 +42,7 @@ public class DateAdapter extends BaseAdapter {
         }
     }
 
-    public ArrayList<Item> getItems() {
+    public ArrayList<Item> getImages() {
         return items;
     }
 
@@ -79,7 +77,7 @@ public class DateAdapter extends BaseAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        if (items.get(position).getIsImage()) {
+        if (items.get(position).isImage()) {
             ImageView imageView = new ImageView(context);
             Glide.with(context).load(items.get(position).getFilePath()).into(imageView);
             imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
