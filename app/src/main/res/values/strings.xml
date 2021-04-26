@@ -14,4 +14,9 @@
     <string name="item_detail_path_sample">DCIM/abc.jpg</string>
     <string name="item_detail_location">Vị trí</string>
     <string name="item_detail_location_sample">TP HCM</string>
+    <string name="delete_item">delete?</string>
+    <string name="no">no</string>
+    <string name="delete">yess</string>
+    <string name="retry">Retry</string>
+    <string name="read_permission_denied">K du quyen</string>
 </resources>

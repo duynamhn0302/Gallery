@@ -9,6 +9,8 @@ import android.widget.ListAdapter;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.gallery.R;
@@ -35,9 +37,9 @@ public class AlbumDetailAdapter extends RecyclerView.Adapter{
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         ViewHolder viewHolder = (ViewHolder)holder;
         viewHolder.date.setText(list.get(position).getDate());
-        viewHolder.gridView.setAdapter(list.get(position));
-        viewHolder.gridView.setVerticalScrollBarEnabled(false);
-        setGridViewHeightBasedOnChildren(viewHolder.gridView, 4);
+        viewHolder.recyclerView.setAdapter(list.get(position));
+        GridLayoutManager gridLayoutManager = new GridLayoutManager(context, 4);
+        viewHolder.recyclerView.setLayoutManager(gridLayoutManager);
     }
 
     @Override
@@ -46,38 +48,11 @@ public class AlbumDetailAdapter extends RecyclerView.Adapter{
     }
     private class ViewHolder extends RecyclerView.ViewHolder{
         TextView date;
-        GridView gridView;
+        RecyclerView recyclerView;
         public ViewHolder(View itemView) {
             super(itemView);
             date = itemView.findViewById(R.id.date);
-            gridView = itemView.findViewById(R.id.gridView);
+            recyclerView = itemView.findViewById(R.id.recyclerView);
         }
-    }
-    public void setGridViewHeightBasedOnChildren(GridView gridView, int columns) {
-        ListAdapter listAdapter = gridView.getAdapter();
-        if (listAdapter == null) {
-            // pre-condition
-            return;
-        }
-
-        int totalHeight = 0;
-        int items = listAdapter.getCount();
-        int rows = 0;
-
-        View listItem = listAdapter.getView(0, null, gridView);
-        listItem.measure(0, 0);
-        totalHeight = 305;//listItem.getMeasuredHeight();
-
-        float x = 1;
-        if( items > columns ){
-            x = items/columns;
-            rows = (int) (x + 1);
-            totalHeight *= rows;
-        }
-
-        ViewGroup.LayoutParams params = gridView.getLayoutParams();
-        params.height = totalHeight;
-        gridView.setLayoutParams(params);
-
     }
 }

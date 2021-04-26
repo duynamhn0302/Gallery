@@ -11,16 +11,14 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Ngay 1/2/2021"/>
-    <GridView
+    <androidx.recyclerview.widget.RecyclerView
         android:layout_margin="1dp"
         android:scrollbarThumbVertical="@android:color/transparent"
-        android:id="@+id/gridView"
+        android:id="@+id/recyclerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:numColumns="4"
         android:horizontalSpacing="2dp"
-        android:verticalSpacing="2dp"
-        android:gravity="center">
+        android:verticalSpacing="2dp">
 
-    </GridView>
+    </androidx.recyclerview.widget.RecyclerView>
 </LinearLayout>

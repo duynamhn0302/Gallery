@@ -1,13 +1,25 @@
 package com.example.gallery.model;
 
 
+import android.content.ContentUris;
 import android.net.Uri;
+import android.provider.MediaStore;
 
 import androidx.annotation.Nullable;
 
 import java.io.Serializable;
 
 public class Image extends Item implements Serializable {
+
+    public Image(Long id, String absolutePathOfFile, String addedDate) {
+        this.id = id;
+        this.filePath = absolutePathOfFile;
+        super.isImage = true;
+        this.addedDate = addedDate;
+    }
+
+    public Image(Uri uri) {
+    }
 
     @Override
     public boolean equals(@Nullable Object obj) {
@@ -20,10 +32,7 @@ public class Image extends Item implements Serializable {
     public Image() {
         isImage = true;
     }
-    public Image(Uri uri){
-        super(uri);
-        isImage = true;
-    }
+
     public Image(String filePath){
         this.filePath = filePath;
         super.isImage = true;

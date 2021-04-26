@@ -1,39 +1,148 @@
 package com.example.gallery.activity;
 
+import android.Manifest;
+import android.app.RecoverableSecurityException;
+import android.content.BroadcastReceiver;
+import android.content.ContentProvider;
+import android.content.ContentResolver;
+import android.content.ContentUris;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentSender;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.location.Address;
+import android.location.Geocoder;
+import android.media.ExifInterface;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.DocumentsContract;
+import android.provider.MediaStore;
+import android.text.format.DateFormat;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
+import androidx.documentfile.provider.DocumentFile;
+import androidx.loader.content.CursorLoader;
 import androidx.viewpager2.widget.ViewPager2;
 
-import com.example.gallery.BuildConfig;
+import com.davemorrissey.labs.subscaleview.BuildConfig;
+import com.drew.imaging.ImageMetadataReader;
+import com.drew.imaging.ImageProcessingException;
+import com.drew.metadata.Directory;
+import com.drew.metadata.Metadata;
+import com.drew.metadata.Tag;
+import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.example.gallery.R;
 import com.example.gallery.adapter.ScreenSlidePagerAdapter;
 import com.example.gallery.model.Image;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
-import com.dsphotoeditor.sdk.activity.DsPhotoEditorActivity;
-import com.dsphotoeditor.sdk.utils.DsPhotoEditorConstants;
 import com.example.gallery.model.Item;
+import com.example.gallery.model.Video;
+
+import ly.img.android.pesdk.PhotoEditorSettingsList;
+import ly.img.android.pesdk.assets.filter.basic.FilterPackBasic;
+import ly.img.android.pesdk.assets.font.basic.FontPackBasic;
+import ly.img.android.pesdk.assets.frame.basic.FramePackBasic;
+import ly.img.android.pesdk.assets.overlay.basic.OverlayPackBasic;
+import ly.img.android.pesdk.assets.sticker.emoticons.StickerPackEmoticons;
+import ly.img.android.pesdk.assets.sticker.shapes.StickerPackShapes;
+import ly.img.android.pesdk.backend.model.EditorSDKResult;
+import ly.img.android.pesdk.backend.model.state.LoadSettings;
+import ly.img.android.pesdk.backend.model.state.PhotoEditorSaveSettings;
+import ly.img.android.pesdk.backend.model.state.manager.SettingsList;
+import ly.img.android.pesdk.ui.activity.EditorBuilder;
+import ly.img.android.pesdk.ui.model.state.UiConfigFilter;
+import ly.img.android.pesdk.ui.model.state.UiConfigFrame;
+import ly.img.android.pesdk.ui.model.state.UiConfigOverlay;
+import ly.img.android.pesdk.ui.model.state.UiConfigSticker;
+import ly.img.android.pesdk.ui.model.state.UiConfigText;
+import ly.img.android.serializer._3.IMGLYFileWriter;
+
 
 public class ViewItemActivity extends AppCompatActivity {
+    final int PESDK_RESULT = 1;
     private ViewPager2 viewPager;
     Item item;
     ArrayList<Item> items;
     private ImageView imageView;
+    private int image_request_code = 100;
     ScreenSlidePagerAdapter adapter;
     private final int  DS_PHOTO_EDITOR_REQUEST_CODE = 555;
     public static final String OUTPUT_PHOTO_DIRECTORY = "gallery_edit";
+    private static final int UPDATED_CODE = 222;
+    public void deletePhoto() throws IntentSender.SendIntentException {
+        Item itemDel = adapter.remove(viewPager.getCurrentItem());
+        File file = new File(itemDel.getFilePath());
+        boolean success = file.delete();
+        callBroadCast();
+        viewPager.setAdapter(adapter);
+        viewPager.setCurrentItem(items.indexOf(item));
+
+    }
+
+    @Override
+    public void onBackPressed() {
+        setResult(RESULT_OK);
+        finish();
+        super.onBackPressed();
+    }
+
+    public void callBroadCast() {
+        if (Build.VERSION.SDK_INT >= 14) {
+            Log.e("-->", " >= 14");
+            MediaScannerConnection.scanFile(this, new String[]{Environment.getExternalStorageDirectory().toString()}, null, new MediaScannerConnection.OnScanCompletedListener() {
+
+                public void onScanCompleted(String path, Uri uri) {
+                    Log.e("ExternalStorage", "Scanned " + path + ":");
+                    Log.e("ExternalStorage", "-> uri=" + uri);
+                }
+            });
+        } else {
+            Log.e("-->", " < 14");
+            sendBroadcast(new Intent(Intent.ACTION_MEDIA_MOUNTED,
+                    Uri.parse("file://" + Environment.getExternalStorageDirectory())));
+        }
+    }
+    public void showDeleteDialog() {
+        new AlertDialog.Builder(this, getTheme().hashCode())
+                .setTitle(R.string.delete_item + "?")
+                .setNegativeButton(getString(R.string.no), null)
+                .setPositiveButton(getString(R.string.delete), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        try {
+                            deletePhoto();
+                        } catch (IntentSender.SendIntentException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                })
+                .create().show();
+    }
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,19 +155,52 @@ public class ViewItemActivity extends AppCompatActivity {
         viewPager = findViewById(R.id.imagesSlider);
         adapter = createScreenSlideAdapter();
         viewPager.setAdapter(adapter);
-        viewPager.setCurrentItem(MainActivity.items.indexOf(item), false);
+        viewPager.setCurrentItem(items.indexOf(item), false);
         ImageButton edit = findViewById(R.id.edit);
         edit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent dsPhotoEditorIntent = new Intent(ViewItemActivity.this, DsPhotoEditorActivity.class);
-                Uri uri = Uri.fromFile(new File(item.getFilePath()));
-                System.out.println(uri.getPath());
-                dsPhotoEditorIntent.setData(uri);
+                // Create a empty new SettingsList and apply the changes on this referance.
+                PhotoEditorSettingsList settingsList = new PhotoEditorSettingsList();
 
-                dsPhotoEditorIntent.putExtra(DsPhotoEditorConstants.DS_PHOTO_EDITOR_OUTPUT_DIRECTORY, OUTPUT_PHOTO_DIRECTORY);
+                // If you include our asset Packs and you use our UI you also need to add them to the UI,
+                // otherwise they are only available for the backend
+                // See the specific feature sections of our guides if you want to know how to add our own Assets.
 
-                startActivityForResult(dsPhotoEditorIntent, DS_PHOTO_EDITOR_REQUEST_CODE);
+                settingsList.getSettingsModel(UiConfigFilter.class).setFilterList(
+                        FilterPackBasic.getFilterPack()
+                );
+
+                settingsList.getSettingsModel(UiConfigText.class).setFontList(
+                        FontPackBasic.getFontPack()
+                );
+
+                settingsList.getSettingsModel(UiConfigFrame.class).setFrameList(
+                        FramePackBasic.getFramePack()
+                );
+
+                settingsList.getSettingsModel(UiConfigOverlay.class).setOverlayList(
+                        OverlayPackBasic.getOverlayPack()
+                );
+
+                settingsList.getSettingsModel(UiConfigSticker.class).setStickerLists(
+                        StickerPackEmoticons.getStickerCategory(),
+                        StickerPackShapes.getStickerCategory()
+                );
+                int cur = viewPager.getCurrentItem();
+                File file = new File(items.get(cur).getFilePath());
+                Uri uri;
+                if (file.exists())
+                    uri = Uri.fromFile(file);
+                else
+                    return;
+                settingsList.getSettingsModel(LoadSettings.class).setSource(uri);
+
+                settingsList.getSettingsModel(PhotoEditorSaveSettings.class).setOutputToGallery(Environment.DIRECTORY_DCIM);
+
+                new EditorBuilder(ViewItemActivity.this)
+                        .setSettingsList(settingsList)
+                        .startActivityForResult(ViewItemActivity.this, PESDK_RESULT);
 
             }
         });
@@ -93,6 +235,13 @@ public class ViewItemActivity extends AppCompatActivity {
                 }
             }
         });
+        ImageButton del = findViewById(R.id.del);
+        del.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showDeleteDialog();
+            }
+        });
     }
 
     private ScreenSlidePagerAdapter createScreenSlideAdapter() {
@@ -111,9 +260,50 @@ public class ViewItemActivity extends AppCompatActivity {
                     Toast.makeText(this, "Photo saved in " + OUTPUT_PHOTO_DIRECTORY + " folder.", Toast.LENGTH_LONG).show();
                     addPic(outputUri.getPath());
                     break;
+            }
         }
+        if (resultCode == RESULT_OK && requestCode == PESDK_RESULT) {
+            // Editor has saved an Image.
+            EditorSDKResult dataa = new EditorSDKResult(data);
+
+            dataa.notifyGallery(EditorSDKResult.UPDATE_RESULT & EditorSDKResult.UPDATE_SOURCE);
+            Uri uriSource = dataa.getSourceUri();
+            Uri res = dataa.getResultUri();
+            Log.i("PESDK", "Source image is located here " + uriSource);
+            Log.i("PESDK", "Result image is located here " + res);
+
+            // TODO: Do something with the result image
+
+            // OPTIONAL: read the latest state to save it as a serialisation
+            SettingsList lastState = dataa.getSettingsList();
+            File newFile = new File(
+                    Environment.getExternalStorageDirectory(),
+                    "serialisationReadyToReadWithPESDKFileReader.json"
+            );
+            try {
+
+                new IMGLYFileWriter(lastState).writeJson(newFile);
+            } catch (Exception e) { e.printStackTrace(); }
+
+            item = newItem(res);
+            adapter.notifyDataSetChanged();
+            viewPager.setAdapter(adapter);
+            viewPager.setCurrentItem(0);
+        } else if (resultCode == RESULT_CANCELED && requestCode == PESDK_RESULT) {
+            // Editor was canceled
+            EditorSDKResult dataa = new EditorSDKResult(data);
+
+            Uri sourceURI = dataa.getSourceUri();
+            // TODO: Do something...
         }
 
+
+    }
+    private Item newItem(Uri contentUri)  {
+        item = new Image(contentUri.toString());
+
+        items.add(0,item);
+        return item;
     }
 
     void addPic(String path){

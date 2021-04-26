@@ -1,5 +1,6 @@
 package com.example.gallery.fragment;
 
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -44,7 +45,7 @@ public class ScreenSlidePageFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        if (MainActivity.isImageFile(item.getFilePath())) {
+        if (Item.isImageFile(item.getFilePath())) {
             PhotoView imageView =  view.findViewById(R.id.imageOnSlide);
             Glide.with(this).load(item.getFilePath()).into(imageView);
         }else {

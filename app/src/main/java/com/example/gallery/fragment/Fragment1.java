@@ -22,32 +22,29 @@ import java.util.ArrayList;
 public class Fragment1 extends androidx.fragment.app.Fragment {
     AlbumDetailAdapter albumDetailAdapter;
     RecyclerView recyclerView;
-    private ArrayList<GridView> gridViews = new ArrayList<>();
-    private ArrayList<Item> items = new ArrayList<>();
     private ArrayList<DateAdapter> adapters = new ArrayList<>();
-    public Fragment1() {
-        // Required empty public constructor
+
+
+    public Fragment1(ArrayList<DateAdapter> adapters) {
+        this.adapters = adapters;
     }
 
-    public Fragment1(ArrayList<Item> items) {
-        this.items.clear();
-        this.items.addAll(items);
+
+    public AlbumDetailAdapter getAlbumDetailAdapter() {
+        return albumDetailAdapter;
     }
 
-    public void getAllDateAdapter() {
-        String currentDate = items.get(0).getAddedDate();
-        adapters.add(new DateAdapter(items.get(0).getAddedDate(), items, getContext()));
-        for (Item item : items) {
-            if (!item.getAddedDate().equals(currentDate)) {
-                currentDate = item.getAddedDate();
-                adapters.add(new DateAdapter(item.getAddedDate(), items, getContext()));
-            }
-        }
+    public void setAdapters(ArrayList<DateAdapter> adapters) {
+        this.adapters = adapters;
+        albumDetailAdapter = new AlbumDetailAdapter(adapters, getContext());
+
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext());
+        recyclerView.setAdapter(albumDetailAdapter);
+        recyclerView.setLayoutManager(linearLayoutManager);
     }
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
-        getAllDateAdapter();
 
         albumDetailAdapter = new AlbumDetailAdapter(adapters, getContext());
 

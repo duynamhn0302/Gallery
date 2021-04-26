@@ -2,9 +2,12 @@ package com.example.gallery.activity;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
@@ -12,6 +15,7 @@ import androidx.loader.content.CursorLoader;
 import androidx.viewpager.widget.ViewPager;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -20,21 +24,26 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.media.ExifInterface;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.text.format.DateFormat;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.gallery.R;
+import com.example.gallery.adapter.DateAdapter;
 import com.example.gallery.fragment.Fragment1;
 import com.example.gallery.fragment.Fragment2;
 import com.example.gallery.fragment.Fragment3;
 import com.example.gallery.model.Image;
 import com.example.gallery.model.Item;
 import com.example.gallery.model.Video;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
 
 import java.io.File;
@@ -50,10 +59,11 @@ public class MainActivity extends AppCompatActivity {
     ViewPager viewPager;
     String[] listPermissions=new String[]{Manifest.permission.CAMERA};
     static ArrayList<Item> items = new ArrayList<>();
-    private static final int READ_PERMISSION_CODE = 100;
-    private static final int LOCATION_PERMISSION_CODE = 200;
-    private static final int CAMERA_PERMISSION_CODE = 300;
+    public static final int PERMISSION_REQUEST_CODE = 100;
+    public static final int CAMERA_PERMISSION_CODE = 300;
+    public static final int UPDATED_CODE = 222;
     static final int REQUEST_IMAGE_CAPTURE = 1;
+    PagerAdapter adapter;
     boolean checkPermission(String per){
         if(ContextCompat.checkSelfPermission(this,per)!=PackageManager.PERMISSION_GRANTED){
             return false;
@@ -80,24 +90,15 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(MainActivity.this, "ád", Toast.LENGTH_SHORT).show();
         }
     }
-    private void galleryAddPic() {
-        Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-        File f = new File(currentPhotoPath);
-        Uri contentUri = Uri.fromFile(f);
-        mediaScanIntent.setData(contentUri);
-        this.sendBroadcast(mediaScanIntent);
 
-    }
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
         super.onActivityResult(requestCode, resultCode, data);
-        galleryAddPic();
         System.out.println(currentPhotoPath);
         if (resultCode == RESULT_OK) {
             if (requestCode == REQUEST_IMAGE_CAPTURE) {
 
-                galleryAddPic();
 
                 // here you will get the image as bitmap
 
@@ -105,11 +106,48 @@ public class MainActivity extends AppCompatActivity {
             } else if (resultCode == RESULT_CANCELED) {
                 Toast.makeText(this, "Picture was not taken", Toast.LENGTH_SHORT);
             }
+            if (requestCode == UPDATED_CODE) {
+
+
+                loadAllFiles();
+                Fragment1 fragment1 = (Fragment1) adapter.getItem(0);
+                fragment1.setAdapters(getAllDateAdapter(items));
+                fragment1.getAlbumDetailAdapter().notifyDataSetChanged();
+
+            } else if (resultCode == RESULT_CANCELED) {
+                Toast.makeText(this, "Picture was not taken", Toast.LENGTH_SHORT);
+            }
+
         }
 
 
     }
-
+    public ArrayList<DateAdapter> getAllDateAdapter(ArrayList<Item> items) {
+        ArrayList<DateAdapter> adapters = new ArrayList<>();
+        if(items.size() ==0)
+            return adapters;
+        String currentDate = null;
+        ArrayList<Item> temp = new ArrayList<>();
+        for (Item item : items) {
+            if (currentDate == null){
+                currentDate = item.getAddedDate();
+                temp.add(item);
+            }
+            else {
+                if (!item.getAddedDate().equals(currentDate)) {
+                    adapters.add(new DateAdapter(currentDate, temp, this));
+                    currentDate = item.getAddedDate();
+                    temp = new ArrayList();
+                    temp.add(item);
+                } else {
+                    temp.add(item);
+                }
+            }
+        }
+        if (!temp.isEmpty())
+            adapters.add(new DateAdapter(currentDate, temp, this));
+        return adapters;
+    }
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
@@ -121,7 +159,9 @@ public class MainActivity extends AppCompatActivity {
             case R.id.camera:
                 if(!checkPermission(Manifest.permission.CAMERA)||!checkPermission(Manifest.permission.READ_CONTACTS))
                 {
-                    this.requestPermissions(listPermissions,CAMERA_PERMISSION_CODE);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        requestPermissions(listPermissions,CAMERA_PERMISSION_CODE);
+                    }
                 }else {
                     dispatchTakePictureIntent();
                 }
@@ -135,33 +175,24 @@ public class MainActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         switch (requestCode) {
-            case READ_PERMISSION_CODE:
+            case PERMISSION_REQUEST_CODE:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Toast.makeText(this, "Read external permission granted", Toast.LENGTH_SHORT).show();
-                    try {
-                        init();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    Toast.makeText(this, "Yeah external permission granted", Toast.LENGTH_SHORT).show();
+
+                    init();
+
                 } else {
-                    Toast.makeText(this, "Read external permission denied", Toast.LENGTH_SHORT).show();
-                    finish();
+                    Snackbar snackbar = getPermissionDeniedSnackbar(findViewById(R.id.root_view));
+                    snackbar.setAction(R.string.retry, new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            checkPermission(MainActivity.this);
+                        }
+                    });
+                    showSnackbar(snackbar);
                 }
                 break;
 
-            case LOCATION_PERMISSION_CODE:
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Toast.makeText(this, "Location permission granted", Toast.LENGTH_SHORT).show();
-                    try {
-                        init();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    Toast.makeText(this, "Location permission denied", Toast.LENGTH_SHORT).show();
-                    finish();
-                }
-                break;
             case CAMERA_PERMISSION_CODE:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     Toast.makeText(this, "Camera permission granted", Toast.LENGTH_SHORT).show();
@@ -174,35 +205,68 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void init() throws IOException {
+    public void init()  {
         loadAllFiles();
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         tabLayout = (TabLayout) findViewById(R.id.tab_layout);
         viewPager = (ViewPager) findViewById(R.id.view_pager);
-        PagerAdapter adapter = new PagerAdapter(getSupportFragmentManager());
-        adapter.addFragment(new Fragment1(items), "Ảnh/Video");
+        adapter = new PagerAdapter(getSupportFragmentManager());
+
+        adapter.addFragment(new Fragment1(getAllDateAdapter(items)), "Ảnh/Video");
         adapter.addFragment(new Fragment2(items), "Album");
         adapter.addFragment(new Fragment3(items), "Người");
         viewPager.setAdapter(adapter);
         tabLayout.setupWithViewPager(viewPager);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_gallery);
         //Request access storage permission
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
-            requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, READ_PERMISSION_CODE);
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
-            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION_CODE);
-        try {
+        if(!checkPermission(this))
+            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE},1000);
+        else
             init();
-        } catch (IOException e) {
-            e.printStackTrace();
+    }
+    public static Snackbar getPermissionDeniedSnackbar(final View rootView) {
+        Snackbar snackbar = Snackbar.make(rootView,
+                R.string.read_permission_denied,
+                Snackbar.LENGTH_INDEFINITE);
+        snackbar.getView().setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View view) {
+                Toast.makeText(rootView.getContext(), R.string.read_permission_denied, Toast.LENGTH_SHORT).show();
+                return false;
+            }
+        });
+        return snackbar;
+    }
+    public static final String SNACKBAR = "SNACKBAR";
+    public static void showSnackbar(Snackbar snackbar) {
+        snackbar.getView().setTag(SNACKBAR);
+        TextView textView = snackbar.getView()
+                .findViewById(R.id.snackbar_text);
+        textView.setTypeface(ResourcesCompat
+                .getFont(textView.getContext(), R.font.roboto_mono_medium));
+        snackbar.show();
+    }
+    public static boolean checkPermission(Activity context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            int read = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE);
+            int write = ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            if (read != PackageManager.PERMISSION_GRANTED || write != PackageManager.PERMISSION_GRANTED) {
+                String[] requestedPermissions = new String[]{
+                        Manifest.permission.READ_EXTERNAL_STORAGE,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE};
+                ActivityCompat.requestPermissions(context, requestedPermissions, PERMISSION_REQUEST_CODE);
+                return false;
+            }
         }
+        return true;
     }
 
     // load all files from internal storage to array items
@@ -240,6 +304,7 @@ public class MainActivity extends AppCompatActivity {
         while (cursor.moveToNext()) {
             String absolutePathOfFile = cursor.getString(cursor.getColumnIndex(MediaStore.MediaColumns.DATA));
             Long longDate = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_ADDED));
+            Long id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID));
             Long durationNum = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DURATION));
             String addedDate = DateFormat.format("dd/MM/yyyy", new Date(longDate * 1000)).toString();
 
@@ -257,10 +322,10 @@ public class MainActivity extends AppCompatActivity {
                     String address = addresses.get(0).getAddressLine(0);
                 }
 
-                if (isImageFile(absolutePathOfFile))
-                    items.add(new Image(absolutePathOfFile,  addedDate));
-                if (isVideoFile(absolutePathOfFile)) {
-                    items.add(new Video(absolutePathOfFile,  addedDate, convertToDuration(durationNum)));
+                if (Image.isImageFile(absolutePathOfFile))
+                    items.add(new Image(id, absolutePathOfFile,  addedDate));
+                if (Image.isVideoFile(absolutePathOfFile)) {
+                    items.add(new Video(id, absolutePathOfFile,  addedDate, Image.convertToDuration(durationNum)));
                 }
             }
             catch (Exception ex){
@@ -271,27 +336,10 @@ public class MainActivity extends AppCompatActivity {
         cursor.close();
     }
 
-    // check if file were image or not
-    public static boolean isVideoFile(String path) {
-        String mimeType = URLConnection.guessContentTypeFromName(path);
-        return mimeType != null && mimeType.startsWith("video");
-    }
 
-    // check if file were video or not
-    public static boolean isImageFile(String path) {
-        String mimeType = URLConnection.guessContentTypeFromName(path);
-        return mimeType != null && mimeType.startsWith("image");
-    }
 
     // convert video duration from type Long to type String (mm:ss)
-    public static String convertToDuration(Long durationNumber) {
-        String duration = String.format("%d:%02d",
-                TimeUnit.MILLISECONDS.toMinutes(durationNumber),
-                TimeUnit.MILLISECONDS.toSeconds(durationNumber) -
-                        TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(durationNumber))
-        );
-        return duration;
-    }
+
 
     public ArrayList<Item> getItems() {
         ArrayList<Item> allImages = new ArrayList<Item>(items);

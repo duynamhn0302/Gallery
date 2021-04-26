@@ -1,7 +1,9 @@
 package com.example.gallery.model;
 
 
+import android.content.ContentUris;
 import android.net.Uri;
+import android.provider.MediaStore;
 
 import androidx.annotation.Nullable;
 
@@ -9,6 +11,18 @@ import java.io.Serializable;
 
 public class Video extends Item implements Serializable {
     private String duration;
+
+    public Video(Long id, String absolutePathOfFile, String addedDate, String convertToDuration) {
+        this.id = id;
+        this.filePath = absolutePathOfFile;
+        this.isImage = false;
+        this.addedDate = addedDate;
+        this.duration = convertToDuration;
+    }
+
+    public Video(Uri uri) {
+    }
+
     @Override
     public boolean equals(@Nullable Object obj) {
         if (this == obj) return true;
@@ -20,10 +34,7 @@ public class Video extends Item implements Serializable {
     public Video() {
         isImage = false;
     }
-    public Video(Uri uri){
-        super();
-        isImage = false;
-    }
+    
     public Video(String filePath){
         this.filePath = filePath;
         super.isImage = false;
