@@ -14,15 +14,29 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.gallery.R;
+import com.example.gallery.activity.MainActivity;
+import com.example.gallery.model.Item;
 
 import java.util.ArrayList;
 
 public class AlbumDetailAdapter extends RecyclerView.Adapter{
-    private ArrayList<DateAdapter> list = new ArrayList<>();
+    static public ArrayList<DateAdapter> list = new ArrayList<>();
     private Context context;
+    static public  Integer delMode = 0;
+    static public Integer countCheck = 0;
     public AlbumDetailAdapter(ArrayList<DateAdapter> list, Context context){
         this.list = list;
         this.context = context;
+    }
+    static public void checkAll() {
+        for(Item item : MainActivity.items)
+            item.setChecked(true);
+        countCheck = MainActivity.items.size();
+    }
+    static public void unCheckAll(){
+        for(Item item : MainActivity.items)
+            item.setChecked(false);
+        countCheck = 0;
     }
     @NonNull
     @Override
@@ -54,5 +68,9 @@ public class AlbumDetailAdapter extends RecyclerView.Adapter{
             date = itemView.findViewById(R.id.date);
             recyclerView = itemView.findViewById(R.id.recyclerView);
         }
+    }
+    static public void notifyChanged(){
+        for(DateAdapter adapter:list)
+            adapter.notifyDataSetChanged();
     }
 }

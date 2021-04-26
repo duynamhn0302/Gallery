@@ -87,28 +87,30 @@ public class ViewItemActivity extends AppCompatActivity {
     final int PESDK_RESULT = 1;
     private ViewPager2 viewPager;
     Item item;
-    ArrayList<Item> items;
     private ImageView imageView;
     private int image_request_code = 100;
     ScreenSlidePagerAdapter adapter;
     private final int  DS_PHOTO_EDITOR_REQUEST_CODE = 555;
     public static final String OUTPUT_PHOTO_DIRECTORY = "gallery_edit";
     private static final int UPDATED_CODE = 222;
-    public void deletePhoto() throws IntentSender.SendIntentException {
+    private boolean change = false;
+    public void deletePhoto()  {
+        change = true;
         Item itemDel = adapter.remove(viewPager.getCurrentItem());
+        MainActivity.items.remove(itemDel);
         File file = new File(itemDel.getFilePath());
         boolean success = file.delete();
         callBroadCast();
         viewPager.setAdapter(adapter);
-        viewPager.setCurrentItem(items.indexOf(item));
+        viewPager.setCurrentItem(MainActivity.items.indexOf(adapter.currentItem));
 
     }
 
     @Override
     public void onBackPressed() {
-        setResult(RESULT_OK);
+        int res = change?RESULT_OK:RESULT_CANCELED;
+        setResult(res);
         finish();
-        super.onBackPressed();
     }
 
     public void callBroadCast() {
@@ -128,17 +130,13 @@ public class ViewItemActivity extends AppCompatActivity {
         }
     }
     public void showDeleteDialog() {
-        new AlertDialog.Builder(this, getTheme().hashCode())
+        new AlertDialog.Builder(this, R.style.Widget_MaterialComponents_ActionBar_Solid)
                 .setTitle(R.string.delete_item + "?")
                 .setNegativeButton(getString(R.string.no), null)
                 .setPositiveButton(getString(R.string.delete), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        try {
-                            deletePhoto();
-                        } catch (IntentSender.SendIntentException e) {
-                            e.printStackTrace();
-                        }
+                        deletePhoto();
                     }
                 })
                 .create().show();
@@ -155,7 +153,7 @@ public class ViewItemActivity extends AppCompatActivity {
         viewPager = findViewById(R.id.imagesSlider);
         adapter = createScreenSlideAdapter();
         viewPager.setAdapter(adapter);
-        viewPager.setCurrentItem(items.indexOf(item), false);
+        viewPager.setCurrentItem(MainActivity.items.indexOf(item), false);
         ImageButton edit = findViewById(R.id.edit);
         edit.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -188,7 +186,7 @@ public class ViewItemActivity extends AppCompatActivity {
                         StickerPackShapes.getStickerCategory()
                 );
                 int cur = viewPager.getCurrentItem();
-                File file = new File(items.get(cur).getFilePath());
+                File file = new File(MainActivity.items.get(cur).getFilePath());
                 Uri uri;
                 if (file.exists())
                     uri = Uri.fromFile(file);
@@ -209,7 +207,7 @@ public class ViewItemActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(ViewItemActivity.this, InfoItemActivity.class);
-                intent.putExtra("info", items.get(viewPager.getCurrentItem()));
+                intent.putExtra("info", MainActivity.items.get(viewPager.getCurrentItem()));
                 startActivity(intent);
             }
         });
@@ -218,7 +216,7 @@ public class ViewItemActivity extends AppCompatActivity {
         share.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                item = items.get(viewPager.getCurrentItem());
+                item = MainActivity.items.get(viewPager.getCurrentItem());
                 File fileToShare = new File(item.getFilePath());
                 if (fileToShare.exists()) {
                     Intent intent = new Intent();
@@ -245,25 +243,17 @@ public class ViewItemActivity extends AppCompatActivity {
     }
 
     private ScreenSlidePagerAdapter createScreenSlideAdapter() {
-        items = MainActivity.items;
-        ScreenSlidePagerAdapter adapter = new ScreenSlidePagerAdapter(this, items, item);
+        ScreenSlidePagerAdapter adapter = new ScreenSlidePagerAdapter(this,  MainActivity.items, item);
         return adapter;
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (resultCode == RESULT_OK) {
-            switch (requestCode) {
-                case DS_PHOTO_EDITOR_REQUEST_CODE:
-                    Uri outputUri = data.getData();
-                    Toast.makeText(this, "Photo saved in " + OUTPUT_PHOTO_DIRECTORY + " folder.", Toast.LENGTH_LONG).show();
-                    addPic(outputUri.getPath());
-                    break;
-            }
-        }
+
         if (resultCode == RESULT_OK && requestCode == PESDK_RESULT) {
             // Editor has saved an Image.
+            change = true;
             EditorSDKResult dataa = new EditorSDKResult(data);
 
             dataa.notifyGallery(EditorSDKResult.UPDATE_RESULT & EditorSDKResult.UPDATE_SOURCE);
@@ -285,7 +275,8 @@ public class ViewItemActivity extends AppCompatActivity {
                 new IMGLYFileWriter(lastState).writeJson(newFile);
             } catch (Exception e) { e.printStackTrace(); }
 
-            item = newItem(res);
+            item = newItem();
+            MainActivity.items.add(0, item);
             adapter.notifyDataSetChanged();
             viewPager.setAdapter(adapter);
             viewPager.setCurrentItem(0);
@@ -299,23 +290,63 @@ public class ViewItemActivity extends AppCompatActivity {
 
 
     }
-    private Item newItem(Uri contentUri)  {
-        item = new Image(contentUri.toString());
+    private Item newItem()  {
+        String[] projection = {
+                MediaStore.Files.FileColumns._ID,
+                MediaStore.Files.FileColumns.DATA,
+                MediaStore.Files.FileColumns.DATE_ADDED,
+                MediaStore.Files.FileColumns.MEDIA_TYPE,
+                MediaStore.Files.FileColumns.MIME_TYPE,
+                MediaStore.Files.FileColumns.DURATION,
+                MediaStore.Files.FileColumns.TITLE
+        };
 
-        items.add(0,item);
+        // Return only video and image metadata.
+        String selection = MediaStore.Files.FileColumns.MEDIA_TYPE + "="
+                + MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE
+                + " OR "
+                + MediaStore.Files.FileColumns.MEDIA_TYPE + "="
+                + MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO;
+
+        Uri queryUri = MediaStore.Files.getContentUri("external");
+
+        CursorLoader cursorLoader = new CursorLoader(
+                this,
+                queryUri,
+                projection,
+                selection,
+                null, // Selection args (none).
+                MediaStore.Files.FileColumns.DATE_ADDED + " DESC LIMIT 1" // Sort order.
+        );
+
+        Cursor cursor = cursorLoader.loadInBackground();
+        Item item = null;
+        if (cursor.moveToNext()) {
+            String absolutePathOfFile = cursor.getString(cursor.getColumnIndex(MediaStore.MediaColumns.DATA));
+            Long longDate = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_ADDED));
+            Long id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID));
+            Long durationNum = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DURATION));
+            String addedDate = DateFormat.format("dd/MM/yyyy", new Date(longDate * 1000)).toString();
+
+            ExifInterface exif;
+            try{
+
+                exif = new ExifInterface(absolutePathOfFile);
+                float[] latLng = new float[2];
+                exif.getLatLong(latLng);
+
+                Geocoder geocoder = new Geocoder(this);
+                List<Address> addresses = geocoder.getFromLocation(latLng[0], latLng[1], 1);
+
+                item = new Image(id, absolutePathOfFile,  addedDate);
+            }
+            catch (Exception ex){
+                System.out.println(absolutePathOfFile);
+            }
+        }
+        cursor.close();
         return item;
     }
 
-    void addPic(String path){
-        Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-        File f = new File(path);
-        Uri uri = Uri.fromFile(f);
-        intent.setData(uri);
-        sendBroadcast(intent);
-    }
-    String newName(String name){
-        int i = name.lastIndexOf('.');
-        return name.substring(0, i) + "edit" + name.substring(i);
-    }
 
 }

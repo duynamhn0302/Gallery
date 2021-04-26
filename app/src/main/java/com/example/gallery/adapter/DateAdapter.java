@@ -7,6 +7,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -78,6 +80,7 @@ public class DateAdapter extends RecyclerView.Adapter {
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        CheckBox check = null;
         if (items.get(position).isImage())
         {
             ImageViewHolder imageViewHolder = (ImageViewHolder)holder;
@@ -85,33 +88,131 @@ public class DateAdapter extends RecyclerView.Adapter {
             ImageView imageView = imageViewHolder.imageView;
             Glide.with(context).load(items.get(position).getFilePath()).into(imageView);
             imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            check = imageViewHolder.view.findViewById(R.id.check);
+            CheckBox finalCheck = check;
             imageView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     //Do some work here
+                    if (AlbumDetailAdapter.delMode == 1){
+                        if (items.get(position).getChecked()){
+                            finalCheck.setChecked(false);
+                            items.get(position).setChecked(false);
+
+                        }
+                        else{
+                            finalCheck.setChecked(true);
+                            items.get(position).setChecked(true);
+
+                        }
+
+                        return;
+                    }
                     Intent intent = new Intent((Activity) context, ViewItemActivity.class);
                     intent.putExtra("item", items.get(position));
                     ((Activity) context).startActivityForResult(intent, MainActivity.UPDATED_CODE);
                 }
             });
-            return;
+
+            imageView.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    AlbumDetailAdapter.delMode = (AlbumDetailAdapter.delMode + 1) % 2;
+                    if (AlbumDetailAdapter.delMode == 1){
+                        finalCheck.setChecked(true);
+                        items.get(position).setChecked(true);
+                        MainActivity.showMenu();
+                        MainActivity.actionBar.setDisplayHomeAsUpEnabled(true);
+                    }
+                    else{
+                        AlbumDetailAdapter.unCheckAll();
+                        MainActivity.hideMenu();
+                        MainActivity.actionBar.setDisplayHomeAsUpEnabled(false);
+                    }
+                    AlbumDetailAdapter.notifyChanged();
+                    return true;
+                }
+            });
         }
-        VideoViewHolder videoViewHolder = (VideoViewHolder) holder;
-        ImageView thumbnail = videoViewHolder.thumnail;
-        Glide.with(context).load(items.get(position).getFilePath()).into(thumbnail);
-        thumbnail.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        TextView textView = videoViewHolder.duration;
-        textView.setText(items.get(position).getDuration());
-        thumbnail.setOnClickListener(new View.OnClickListener() {
+        else{
+            VideoViewHolder videoViewHolder = (VideoViewHolder) holder;
+            ImageView thumbnail = videoViewHolder.thumnail;
+            Glide.with(context).load(items.get(position).getFilePath()).into(thumbnail);
+            thumbnail.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            TextView textView = videoViewHolder.duration;
+            textView.setText(items.get(position).getDuration());
+            check = videoViewHolder.view.findViewById(R.id.check);
+            CheckBox finalCheck1 = check;
+            thumbnail.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    //Do some work here
+                    if (AlbumDetailAdapter.delMode == 1){
+                        if (items.get(position).getChecked()){
+                            finalCheck1.setChecked(false);
+                            items.get(position).setChecked(false);
+
+                        }
+                        else{
+                            finalCheck1.setChecked(true);
+                            items.get(position).setChecked(true);
+
+                        }
+
+                        return;
+                    }
+                    Intent intent = new Intent((Activity) context, ViewItemActivity.class);
+                    intent.putExtra("item", items.get(position));
+                    ((Activity) context).startActivityForResult(intent, MainActivity.UPDATED_CODE);
+                }
+            });
+
+            thumbnail.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    AlbumDetailAdapter.delMode = (AlbumDetailAdapter.delMode + 1) % 2;
+                    if (AlbumDetailAdapter.delMode == 1){
+                        finalCheck1.setChecked(true);
+                        items.get(position).setChecked(true);
+                        MainActivity.showMenu();
+                        MainActivity.actionBar.setDisplayHomeAsUpEnabled(true);
+                    }
+                    else{
+                        AlbumDetailAdapter.unCheckAll();
+                        MainActivity.hideMenu();
+                        MainActivity.actionBar.setDisplayHomeAsUpEnabled(false);
+                    }
+                   AlbumDetailAdapter.notifyChanged();
+                    return true;
+                }
+            });
+        }
+        if (AlbumDetailAdapter.delMode == 1)
+            check.setVisibility(CheckBox.VISIBLE);
+        else
+            check.setVisibility(CheckBox.INVISIBLE);
+        if (items.get(position).getChecked())
+            check.setChecked(true);
+        else
+            check.setChecked(false);
+        check.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
-            public void onClick(View view) {
-                //Do some work here
-                Intent intent = new Intent((Activity) context, ViewItemActivity.class);
-                intent.putExtra("item", items.get(position));
-                ((Activity) context).startActivityForResult(intent, MainActivity.UPDATED_CODE);
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+
+                if(isChecked){
+                    AlbumDetailAdapter.countCheck++;
+                }
+                else{
+                    AlbumDetailAdapter.countCheck--;
+                }
+                CheckBox checkBox = (CheckBox)MainActivity.checkAll.getActionView();
+                if(AlbumDetailAdapter.countCheck == MainActivity.items.size()){
+                    checkBox.setChecked(true);
+                }
+                else
+                    checkBox.setChecked(false);
             }
         });
-
     }
 
     @Override
@@ -131,16 +232,20 @@ public class DateAdapter extends RecyclerView.Adapter {
 
     private class ImageViewHolder extends RecyclerView.ViewHolder{
         ImageView imageView;
+        View view;
         public ImageViewHolder(View itemView) {
             super(itemView);
+            view = itemView;
             imageView = itemView.findViewById(R.id.image);
         }
     }
     private class VideoViewHolder extends RecyclerView.ViewHolder{
         ImageView thumnail;
         TextView duration;
+        View view;
         public VideoViewHolder(View itemView) {
             super(itemView);
+            view = itemView;
             thumnail = itemView.findViewById(R.id.thumbnail);
             duration = itemView.findViewById(R.id.text_duration);
         }

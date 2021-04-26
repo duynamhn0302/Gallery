@@ -19,7 +19,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 public class ScreenSlidePagerAdapter extends FragmentStateAdapter {
-    private Item currentItem;
+    public Item currentItem;
     private ArrayList<Item> items;
     public ScreenSlidePagerAdapter(FragmentActivity fa, ArrayList<Item> items, Item currentItem) {
         super(fa);

@@ -3,6 +3,8 @@ package com.example.gallery.activity;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
@@ -16,7 +18,9 @@ import androidx.viewpager.widget.ViewPager;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.icu.text.SimpleDateFormat;
@@ -32,10 +36,13 @@ import android.text.format.DateFormat;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.gallery.R;
+import com.example.gallery.adapter.AlbumDetailAdapter;
 import com.example.gallery.adapter.DateAdapter;
 import com.example.gallery.fragment.Fragment1;
 import com.example.gallery.fragment.Fragment2;
@@ -58,12 +65,27 @@ public class MainActivity extends AppCompatActivity {
     TabLayout tabLayout;
     ViewPager viewPager;
     String[] listPermissions=new String[]{Manifest.permission.CAMERA};
-    static ArrayList<Item> items = new ArrayList<>();
+    static public ArrayList<Item> items = new ArrayList<>();
     public static final int PERMISSION_REQUEST_CODE = 100;
     public static final int CAMERA_PERMISSION_CODE = 300;
     public static final int UPDATED_CODE = 222;
     static final int REQUEST_IMAGE_CAPTURE = 1;
+    static public MenuItem checkAll;
+    static public MenuItem del;
+    static public MenuItem camera;
+    static public Menu menu;
+    static public ActionBar actionBar;
     PagerAdapter adapter;
+    static public void showMenu(){
+        checkAll.setVisible(true);
+        del.setVisible(true);
+        menu.setGroupVisible(R.id.group, false);
+    }
+    static public void hideMenu(){
+        checkAll.setVisible(false);
+        del.setVisible(false);
+        menu.setGroupVisible(R.id.group, true);
+    }
     boolean checkPermission(String per){
         if(ContextCompat.checkSelfPermission(this,per)!=PackageManager.PERMISSION_GRANTED){
             return false;
@@ -73,24 +95,90 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
+        this.menu = menu;
         getMenuInflater().inflate(R.menu.menu, menu);
+        checkAll = menu.findItem(R.id.checkAll);
+        del = menu.findItem(R.id.del);
+        camera = menu.findItem(R.id.camera);
+        hideMenu();
+        CheckBox checkBox = (CheckBox)checkAll.getActionView();
+        checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+
+
+            }
+        });
+        checkBox.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(checkBox.isChecked()){
+                    //checkAll();
+                }
+                else {
+                   // unCheckAll();
+                }
+                adapter.notifyDataSetChanged();
+            }
+        });
+
         return true;
     }
-    String currentPhotoPath;
-
-
-
-
-    private void dispatchTakePictureIntent() {
-        Intent i = new Intent();
-        i.setAction(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA_SECURE);
-        if (i.resolveActivity(getPackageManager()) != null) {
-            startActivity(i);
-        } else {
-            Toast.makeText(MainActivity.this, "ád", Toast.LENGTH_SHORT).show();
+    private void deleteItems(){
+        AlbumDetailAdapter.countCheck = 0;
+        for(int i = items.size() - 1; i >= 0; i--){
+            if (items.get(i).getChecked()){
+                File file = new File(items.get(i).getFilePath());
+                if(!file.delete()){
+                    System.out.println("K xoa dc");
+                }
+                items.remove(i);
+            }
         }
+        refesh();
+        hideMenu();
+        getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+        AlbumDetailAdapter.delMode = (AlbumDetailAdapter.delMode + 1) % 2;
     }
-
+    public void showDeleteDialog() {
+        new AlertDialog.Builder(this, getTheme().hashCode())
+                .setTitle(R.string.delete_item + "?")
+                .setNegativeButton(getString(R.string.no), null)
+                .setPositiveButton(getString(R.string.delete), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        deleteItems();
+                    }
+                })
+                .create().show();
+    }
+    String currentPhotoPath;
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+        //noinspection SimplifiableIfStatement
+        switch(id){
+            case R.id.camera:
+                if(!checkPermission(Manifest.permission.CAMERA)||!checkPermission(Manifest.permission.READ_CONTACTS))
+                {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        requestPermissions(listPermissions,CAMERA_PERMISSION_CODE);
+                    }
+                }else {
+                    dispatchTakePictureIntent();
+                }
+            case android.R.id.home:
+                onBackPressed();
+                return true;
+            case R.id.del:
+                showDeleteDialog();
+                break;
+        }
+        return super.onOptionsItemSelected(item);
+    }
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
@@ -108,11 +196,7 @@ public class MainActivity extends AppCompatActivity {
             }
             if (requestCode == UPDATED_CODE) {
 
-
-                loadAllFiles();
-                Fragment1 fragment1 = (Fragment1) adapter.getItem(0);
-                fragment1.setAdapters(getAllDateAdapter(items));
-                fragment1.getAlbumDetailAdapter().notifyDataSetChanged();
+                refesh();
 
             } else if (resultCode == RESULT_CANCELED) {
                 Toast.makeText(this, "Picture was not taken", Toast.LENGTH_SHORT);
@@ -121,6 +205,11 @@ public class MainActivity extends AppCompatActivity {
         }
 
 
+    }
+    void refesh(){
+        Fragment1 fragment1 = (Fragment1) adapter.getItem(0);
+        fragment1.setAdapters(getAllDateAdapter(items));
+        fragment1.getAlbumDetailAdapter().notifyDataSetChanged();
     }
     public ArrayList<DateAdapter> getAllDateAdapter(ArrayList<Item> items) {
         ArrayList<DateAdapter> adapters = new ArrayList<>();
@@ -148,29 +237,23 @@ public class MainActivity extends AppCompatActivity {
             adapters.add(new DateAdapter(currentDate, temp, this));
         return adapters;
     }
+
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-        //noinspection SimplifiableIfStatement
-        switch(id){
-            case R.id.camera:
-                if(!checkPermission(Manifest.permission.CAMERA)||!checkPermission(Manifest.permission.READ_CONTACTS))
-                {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        requestPermissions(listPermissions,CAMERA_PERMISSION_CODE);
-                    }
-                }else {
-                    dispatchTakePictureIntent();
-                }
-
-                break;
+    public void onBackPressed() {
+        if(AlbumDetailAdapter.delMode == 1){
+            for(Item item:items)
+                item.setChecked(false);
+            AlbumDetailAdapter.countCheck = 0;
+            hideMenu();
+            AlbumDetailAdapter.delMode = (AlbumDetailAdapter.delMode + 1) % 2;
+            AlbumDetailAdapter.unCheckAll();
+            AlbumDetailAdapter.notifyChanged();
+            getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+            return;
         }
-        return super.onOptionsItemSelected(item);
-    }
+        super.onBackPressed();
 
+    }
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -213,7 +296,7 @@ public class MainActivity extends AppCompatActivity {
         tabLayout = (TabLayout) findViewById(R.id.tab_layout);
         viewPager = (ViewPager) findViewById(R.id.view_pager);
         adapter = new PagerAdapter(getSupportFragmentManager());
-
+        actionBar = getSupportActionBar();
         adapter.addFragment(new Fragment1(getAllDateAdapter(items)), "Ảnh/Video");
         adapter.addFragment(new Fragment2(items), "Album");
         adapter.addFragment(new Fragment3(items), "Người");
@@ -297,7 +380,7 @@ public class MainActivity extends AppCompatActivity {
                 projection,
                 selection,
                 null, // Selection args (none).
-                MediaStore.Files.FileColumns.DATE_ADDED + " DESC" // Sort order.
+                MediaStore.Files.FileColumns.DATE_ADDED + " DESC " // Sort order.
         );
 
         Cursor cursor = cursorLoader.loadInBackground();
@@ -338,14 +421,15 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-    // convert video duration from type Long to type String (mm:ss)
-
-
-    public ArrayList<Item> getItems() {
-        ArrayList<Item> allImages = new ArrayList<Item>(items);
-        return allImages;
+    private void dispatchTakePictureIntent() {
+        Intent i = new Intent();
+        i.setAction(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA_SECURE);
+        if (i.resolveActivity(getPackageManager()) != null) {
+            startActivity(i);
+        } else {
+            Toast.makeText(MainActivity.this, "ád", Toast.LENGTH_SHORT).show();
+        }
     }
-
     private class PagerAdapter extends FragmentPagerAdapter {
         ArrayList<String> titles = new ArrayList<>();
         ArrayList<Fragment> fragments = new ArrayList<>();

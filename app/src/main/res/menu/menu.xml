@@ -4,23 +4,33 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".activity.GalleryActivity">
     <item
+        android:id="@+id/del"
+        android:icon="@drawable/ic_baseline_delete_24"
+        android:title="TODO"
+        app:showAsAction="always"/>
+    <item
+        android:id="@+id/checkAll"
+        android:checkable="true"
+        android:title="All"
+        android:icon="@drawable/ic_outline_check_box_outline_blank_24"
+        app:actionViewClass="android.widget.CheckBox"
+        app:showAsAction="ifRoom|withText" />
+    <item
         android:id="@+id/camera"
         android:icon="@android:drawable/ic_menu_camera"
         android:title="Menu 1"
         app:showAsAction="ifRoom" />
-    <item
-        android:id="@+id/record"
-        android:icon="@drawable/ic_baseline_videocam_40"
-        android:title="Menu 1"
-        app:showAsAction="ifRoom" />
 
-    <item
-        android:id="@+id/Option1"
-        android:title="Ẩn ngày tháng"/>
-    <item
-        android:id="@+id/Option2"
-        android:title="Sắp xếp theo ngày"/>
-    <item
-        android:id="@+id/Option3"
-        android:title="Sắp xếp size"/>
+
+    <group android:id="@+id/group">
+        <item
+            android:id="@+id/Option1"
+            android:title="Ẩn ngày tháng"/>
+        <item
+            android:id="@+id/Option2"
+            android:title="Sắp xếp theo ngày"/>
+        <item
+            android:id="@+id/Option3"
+            android:title="Sắp xếp size"/>
+    </group>
 </menu>

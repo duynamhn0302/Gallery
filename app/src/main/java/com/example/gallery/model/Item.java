@@ -17,6 +17,14 @@ public abstract class Item implements Serializable {
     protected Uri uri;
     private int headerId;
     protected boolean isImage;
+    boolean isChecked = false;
+
+    public void setChecked(boolean checked) {
+        isChecked = checked;
+    }
+    public boolean getChecked(){
+        return isChecked;
+    }
     Item(){
 
     }
