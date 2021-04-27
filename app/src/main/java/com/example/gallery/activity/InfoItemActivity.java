@@ -15,6 +15,7 @@ import androidx.exifinterface.media.ExifInterface;
 
 import com.example.gallery.R;
 import com.example.gallery.model.Image;
+import com.example.gallery.model.Item;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,7 +38,7 @@ public class InfoItemActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayShowTitleEnabled(false);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        Image image = (Image) getIntent().getSerializableExtra("info");
+        Item item = (Item) getIntent().getSerializableExtra("info");
 
         added_date = (TextView) findViewById(R.id.added_date);
         item_name = (TextView) findViewById(R.id.item_name);
@@ -48,7 +49,7 @@ public class InfoItemActivity extends AppCompatActivity {
 
         ExifInterface exif = null;
         try {
-            exif = new ExifInterface(image.getFilePath());
+            exif = new ExifInterface(item.getFilePath());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -76,8 +77,8 @@ public class InfoItemActivity extends AppCompatActivity {
         }
 
         //Read image resolution
-        if (image.getIsImage()) {
-            Bitmap bitmap = BitmapFactory.decodeFile(image.getFilePath());
+        if (item.isImage()) {
+            Bitmap bitmap = BitmapFactory.decodeFile(item.getFilePath());
             int image_height = bitmap.getHeight();
             int image_width = bitmap.getWidth();
             String resolution = String.valueOf(image_width) + "x" + String.valueOf(image_height);
@@ -87,7 +88,7 @@ public class InfoItemActivity extends AppCompatActivity {
         else {
             //Read video resolution
             MediaMetadataRetriever metaRetriever = new MediaMetadataRetriever();
-            metaRetriever.setDataSource(image.getFilePath());
+            metaRetriever.setDataSource(item.getFilePath());
             String video_height = metaRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
             String video_width = metaRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
             String resolution = video_width + "x" + video_height;
@@ -96,10 +97,10 @@ public class InfoItemActivity extends AppCompatActivity {
         }
 
         //Read file added date
-        added_date.setText(image.getAddedDate());
+        added_date.setText(item.getAddedDate());
 
         //Read file name, path
-        File file = new File(image.getFilePath());
+        File file = new File(item.getFilePath());
         String strFileName = file.getName();
         String strFilePath = file.getParent();
         item_name.setText(strFileName);

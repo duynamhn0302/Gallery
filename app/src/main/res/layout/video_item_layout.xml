@@ -1,61 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    android:layout_height="wrap_content">
+
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/parenVideo"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/parenVideo">
-          <ImageView
+        android:layout_height="wrap_content">
+
+        <ImageView
             android:id="@+id/thumbnail"
             android:layout_width="0dp"
             android:layout_height="0dp"
-            app:layout_constraintDimensionRatio="1:1"
+            android:contentDescription="TODO"
             app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintDimensionRatio="1:1"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-              android:contentDescription="TODO" />
+            app:layout_constraintTop_toTopOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
+
     <LinearLayout
         android:id="@+id/duration"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
         android:layout_alignParentBottom="true"
-        android:background="@color/colorPlayAndDuration"
         android:layout_marginStart="5dp"
-        android:layout_marginTop="-25dp"
-        android:orientation="horizontal"
+        android:layout_marginBottom="35dp"
+        android:background="@color/colorPlayAndDuration"
+        android:gravity="center_vertical"
 
-        tools:ignore="MissingConstraints">
+        android:orientation="horizontal">
 
         <ImageView
             android:id="@+id/play_button"
             android:layout_width="15dp"
             android:layout_height="15dp"
-            android:src="@drawable/ic_baseline_play_arrow_24"
-            android:contentDescription="@string/todo" />
+            android:contentDescription="@string/todo"
+            android:src="@drawable/ic_baseline_play_arrow_24" />
 
         <TextView
             android:id="@+id/text_duration"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="5dp"
+            android:paddingEnd="3dp"
             android:text="@string/_4_30"
             android:textAlignment="center"
             android:textSize="15sp"
-            android:paddingEnd="3dp"
-            android:layout_marginStart="5dp"
             tools:ignore="RtlSymmetry" />
 
     </LinearLayout>
+
     <CheckBox
         android:id="@+id/check"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
-        android:visibility="invisible"/>
+        android:visibility="invisible" />
 
 </RelativeLayout>

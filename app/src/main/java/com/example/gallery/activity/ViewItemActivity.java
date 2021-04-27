@@ -223,7 +223,7 @@ public class ViewItemActivity extends AppCompatActivity {
                     intent.setAction(Intent.ACTION_SEND);
                     intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                     Uri uri = FileProvider.getUriForFile(ViewItemActivity.this,
-                            BuildConfig.APPLICATION_ID + ".provider", fileToShare);
+                            "com.example.gallery.provider", fileToShare);
                     intent.putExtra(Intent.EXTRA_STREAM, uri);
                     if (item.isImage())
                         intent.setType("image/*");
