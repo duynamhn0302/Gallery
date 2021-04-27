@@ -204,15 +204,20 @@ public class DateAdapter extends RecyclerView.Adapter {
                 }
                 else{
                     AlbumDetailAdapter.countCheck--;
+                    MainActivity.checkAllFlag = false;
                 }
                 CheckBox checkBox = (CheckBox)MainActivity.checkAll.getActionView();
-                if(AlbumDetailAdapter.countCheck == MainActivity.items.size()){
+                if(MainActivity.checkAllFlag || AlbumDetailAdapter.countCheck == MainActivity.items.size()){
                     checkBox.setChecked(true);
+                    MainActivity.checkAllFlag = true;
                 }
-                else
+                else{
                     checkBox.setChecked(false);
+                    MainActivity.checkAllFlag = false;
+                }
             }
         });
+
     }
 
     @Override

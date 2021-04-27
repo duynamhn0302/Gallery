@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
 import android.widget.GridView;
 import android.widget.ListAdapter;
 import android.widget.TextView;
@@ -31,12 +32,18 @@ public class AlbumDetailAdapter extends RecyclerView.Adapter{
     static public void checkAll() {
         for(Item item : MainActivity.items)
             item.setChecked(true);
-        countCheck = MainActivity.items.size();
+
+        MainActivity.checkAllFlag = true;
+        AlbumDetailAdapter.notifyChanged();
+
     }
     static public void unCheckAll(){
         for(Item item : MainActivity.items)
             item.setChecked(false);
-        countCheck = 0;
+
+        AlbumDetailAdapter.notifyChanged();
+        MainActivity.checkAllFlag = false;
+
     }
     @NonNull
     @Override

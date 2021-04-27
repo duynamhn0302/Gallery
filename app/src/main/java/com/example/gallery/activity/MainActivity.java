@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -18,12 +19,15 @@ import androidx.viewpager.widget.ViewPager;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.ContentResolver;
+import android.content.ContentValues;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
-import android.icu.text.SimpleDateFormat;
+import android.graphics.Bitmap;
 import android.location.Address;
 import android.location.Geocoder;
 import android.media.ExifInterface;
@@ -55,13 +59,16 @@ import com.google.android.material.tabs.TabLayout;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URLConnection;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
+    private static final int REQUEST_VIDEO_CAPTURE = 111;
     TabLayout tabLayout;
     ViewPager viewPager;
     String[] listPermissions=new String[]{Manifest.permission.CAMERA};
@@ -73,17 +80,25 @@ public class MainActivity extends AppCompatActivity {
     static public MenuItem checkAll;
     static public MenuItem del;
     static public MenuItem camera;
+    static public MenuItem record;
     static public Menu menu;
+    static public boolean checkAllFlag = false;
     static public ActionBar actionBar;
     PagerAdapter adapter;
     static public void showMenu(){
+        actionBar.setDisplayHomeAsUpEnabled(true);
         checkAll.setVisible(true);
         del.setVisible(true);
+        record.setVisible(false);
+        camera.setVisible(false);
         menu.setGroupVisible(R.id.group, false);
     }
     static public void hideMenu(){
+        actionBar.setDisplayHomeAsUpEnabled(false);
         checkAll.setVisible(false);
         del.setVisible(false);
+        record.setVisible(true);
+        camera.setVisible(true);
         menu.setGroupVisible(R.id.group, true);
     }
     boolean checkPermission(String per){
@@ -100,25 +115,20 @@ public class MainActivity extends AppCompatActivity {
         checkAll = menu.findItem(R.id.checkAll);
         del = menu.findItem(R.id.del);
         camera = menu.findItem(R.id.camera);
+        record = menu.findItem(R.id.record);
         hideMenu();
         CheckBox checkBox = (CheckBox)checkAll.getActionView();
-        checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 
-
-            }
-        });
         checkBox.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if(checkBox.isChecked()){
-                    //checkAll();
+                    AlbumDetailAdapter.checkAll();
                 }
                 else {
-                   // unCheckAll();
+                    AlbumDetailAdapter.unCheckAll();
                 }
-                adapter.notifyDataSetChanged();
+
             }
         });
 
@@ -152,7 +162,7 @@ public class MainActivity extends AppCompatActivity {
                 })
                 .create().show();
     }
-    String currentPhotoPath;
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
@@ -162,50 +172,36 @@ public class MainActivity extends AppCompatActivity {
         //noinspection SimplifiableIfStatement
         switch(id){
             case R.id.camera:
-                if(!checkPermission(Manifest.permission.CAMERA)||!checkPermission(Manifest.permission.READ_CONTACTS))
+                if(!checkPermission(Manifest.permission.CAMERA))
                 {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                         requestPermissions(listPermissions,CAMERA_PERMISSION_CODE);
                     }
                 }else {
-                    dispatchTakePictureIntent();
+                    dispatchTakePictureIntent(false);
                 }
+                break;
+            case R.id.record:
+                if(!checkPermission(Manifest.permission.CAMERA))
+                {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        requestPermissions(listPermissions,CAMERA_PERMISSION_CODE);
+                    }
+                }else {
+                    dispatchTakePictureIntent(true);
+                }
+                break;
             case android.R.id.home:
                 onBackPressed();
                 return true;
             case R.id.del:
                 showDeleteDialog();
                 break;
+            default:break;
         }
         return super.onOptionsItemSelected(item);
     }
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
-        super.onActivityResult(requestCode, resultCode, data);
-        System.out.println(currentPhotoPath);
-        if (resultCode == RESULT_OK) {
-            if (requestCode == REQUEST_IMAGE_CAPTURE) {
-
-
-                // here you will get the image as bitmap
-
-
-            } else if (resultCode == RESULT_CANCELED) {
-                Toast.makeText(this, "Picture was not taken", Toast.LENGTH_SHORT);
-            }
-            if (requestCode == UPDATED_CODE) {
-
-                refesh();
-
-            } else if (resultCode == RESULT_CANCELED) {
-                Toast.makeText(this, "Picture was not taken", Toast.LENGTH_SHORT);
-            }
-
-        }
-
-
-    }
     void refesh(){
         Fragment1 fragment1 = (Fragment1) adapter.getItem(0);
         fragment1.setAdapters(getAllDateAdapter(items));
@@ -279,7 +275,7 @@ public class MainActivity extends AppCompatActivity {
             case CAMERA_PERMISSION_CODE:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     Toast.makeText(this, "Camera permission granted", Toast.LENGTH_SHORT).show();
-                    dispatchTakePictureIntent();
+                    dispatchTakePictureIntent(false);
                 } else {
                     Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show();
 
@@ -328,6 +324,148 @@ public class MainActivity extends AppCompatActivity {
         });
         return snackbar;
     }
+
+
+
+    String currentPhotoPath;
+
+    private File createImageFile() throws IOException {
+        // Create an image file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String imageFileName = "JPEG_" + timeStamp + "_";
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_DCIM);
+        File image = File.createTempFile(
+                imageFileName,  /* prefix */
+                ".jpg",         /* suffix */
+                storageDir      /* directory */
+        );
+
+        // Save a file: path for use with ACTION_VIEW intents
+        currentPhotoPath = image.getAbsolutePath();
+        return image;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == RESULT_OK) {
+            if (requestCode == REQUEST_IMAGE_CAPTURE || requestCode == REQUEST_VIDEO_CAPTURE) {
+                if (requestCode == REQUEST_IMAGE_CAPTURE){
+                    Bundle extras = data.getExtras();
+                    Bitmap imageBitmap = (Bitmap) extras.get("data");
+                    String name = "IMAGE_"+ new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+                    try {
+                        saveBitmap(this, imageBitmap, Bitmap.CompressFormat.JPEG, "image/jpeg",name);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                items.add(0, newItem());
+                refesh();
+
+
+            } else if (resultCode == RESULT_CANCELED) {
+                Toast.makeText(this, "Picture was not taken", Toast.LENGTH_SHORT);
+            }
+            if (requestCode == UPDATED_CODE) {
+
+                refesh();
+
+            } else if (resultCode == RESULT_CANCELED) {
+                Toast.makeText(this, "Picture was not taken", Toast.LENGTH_SHORT);
+            }
+
+        }
+
+
+    }
+
+    @NonNull
+    public Uri saveBitmap(@NonNull final Context context, @NonNull final Bitmap bitmap,
+                          @NonNull final Bitmap.CompressFormat format,
+                          @NonNull final String mimeType,
+                          @NonNull final String displayName) throws IOException {
+
+        final ContentValues values = new ContentValues();
+        values.put(MediaStore.MediaColumns.DISPLAY_NAME, displayName);
+        values.put(MediaStore.MediaColumns.MIME_TYPE, mimeType);
+        values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DCIM);
+
+        final ContentResolver resolver = context.getContentResolver();
+        Uri uri = null;
+
+        try {
+            final Uri contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+            uri = resolver.insert(contentUri, values);
+
+            if (uri == null)
+                throw new IOException("Failed to create new MediaStore record.");
+
+            try (final OutputStream stream = resolver.openOutputStream(uri)) {
+                if (stream == null)
+                    throw new IOException("Failed to open output stream.");
+
+                if (!bitmap.compress(format, 100, stream))
+                    throw new IOException("Failed to save bitmap.");
+            }
+
+            return uri;
+        }
+        catch (IOException e) {
+
+            if (uri != null) {
+                // Don't leave an orphan entry in the MediaStore
+                resolver.delete(uri, null, null);
+            }
+
+            throw e;
+        }
+    }
+    private void dispatchTakePictureIntent(boolean video) {
+        if (video){
+            Intent takeVideoIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
+            if (takeVideoIntent.resolveActivity(getPackageManager()) != null) {
+                startActivityForResult(takeVideoIntent, REQUEST_VIDEO_CAPTURE);
+            }
+        }
+        else {
+            Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+        }
+
+    }
+    private class PagerAdapter extends FragmentPagerAdapter {
+        ArrayList<String> titles = new ArrayList<>();
+        ArrayList<Fragment> fragments = new ArrayList<>();
+
+        void addFragment(Fragment fragment, String title) {
+            titles.add(title);
+            fragments.add(fragment);
+        }
+
+        PagerAdapter(FragmentManager fragmentManager) {
+            super(fragmentManager);
+        }
+
+        @NonNull
+        @Override
+        public Fragment getItem(int position) {
+            return fragments.get(position);
+        }
+
+        @Override
+        public int getCount() {
+            return fragments.size();
+        }
+
+        @Nullable
+        @Override
+        public CharSequence getPageTitle(int position) {
+            return titles.get(position);
+        }
+    }
+
     public static final String SNACKBAR = "SNACKBAR";
     public static void showSnackbar(Snackbar snackbar) {
         snackbar.getView().setTag(SNACKBAR);
@@ -351,7 +489,6 @@ public class MainActivity extends AppCompatActivity {
         }
         return true;
     }
-
     // load all files from internal storage to array items
     public void loadAllFiles() {
         items.clear();
@@ -412,52 +549,72 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
             catch (Exception ex){
-               // ex.printStackTrace();
+                // ex.printStackTrace();
                 System.out.println(absolutePathOfFile);
             }
         }
         cursor.close();
     }
+    private Item newItem()  {
+        String[] projection = {
+                MediaStore.Files.FileColumns._ID,
+                MediaStore.Files.FileColumns.DATA,
+                MediaStore.Files.FileColumns.DATE_ADDED,
+                MediaStore.Files.FileColumns.MEDIA_TYPE,
+                MediaStore.Files.FileColumns.MIME_TYPE,
+                MediaStore.Files.FileColumns.DURATION,
+                MediaStore.Files.FileColumns.TITLE
+        };
+
+        // Return only video and image metadata.
+        String selection = MediaStore.Files.FileColumns.MEDIA_TYPE + "="
+                + MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE
+                + " OR "
+                + MediaStore.Files.FileColumns.MEDIA_TYPE + "="
+                + MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO;
+
+        Uri queryUri = MediaStore.Files.getContentUri("external");
+
+        CursorLoader cursorLoader = new CursorLoader(
+                this,
+                queryUri,
+                projection,
+                selection,
+                null, // Selection args (none).
+                MediaStore.Files.FileColumns.DATE_ADDED + " DESC LIMIT 1" // Sort order.
+        );
+
+        Cursor cursor = cursorLoader.loadInBackground();
+        Item item = null;
+        if (cursor.moveToNext()) {
+            String absolutePathOfFile = cursor.getString(cursor.getColumnIndex(MediaStore.MediaColumns.DATA));
+            Long longDate = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_ADDED));
+            Long id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID));
+            Long durationNum = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DURATION));
+            String addedDate = DateFormat.format("dd/MM/yyyy", new Date(longDate * 1000)).toString();
+
+            ExifInterface exif;
+            try{
+
+                exif = new ExifInterface(absolutePathOfFile);
+                float[] latLng = new float[2];
+                exif.getLatLong(latLng);
+
+                Geocoder geocoder = new Geocoder(this);
+                List<Address> addresses = geocoder.getFromLocation(latLng[0], latLng[1], 1);
 
 
-
-    private void dispatchTakePictureIntent() {
-        Intent i = new Intent();
-        i.setAction(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA_SECURE);
-        if (i.resolveActivity(getPackageManager()) != null) {
-            startActivity(i);
-        } else {
-            Toast.makeText(MainActivity.this, "ád", Toast.LENGTH_SHORT).show();
+                if (Image.isImageFile(absolutePathOfFile))
+                    item = new Image(id, absolutePathOfFile,  addedDate);
+                if (Image.isVideoFile(absolutePathOfFile)) {
+                    item = new Video(id, absolutePathOfFile,  addedDate, Image.convertToDuration(durationNum));
+                }
+            }
+            catch (Exception ex){
+                System.out.println(absolutePathOfFile);
+            }
         }
-    }
-    private class PagerAdapter extends FragmentPagerAdapter {
-        ArrayList<String> titles = new ArrayList<>();
-        ArrayList<Fragment> fragments = new ArrayList<>();
-
-        void addFragment(Fragment fragment, String title) {
-            titles.add(title);
-            fragments.add(fragment);
-        }
-
-        PagerAdapter(FragmentManager fragmentManager) {
-            super(fragmentManager);
-        }
-
-        @NonNull
-        @Override
-        public Fragment getItem(int position) {
-            return fragments.get(position);
-        }
-
-        @Override
-        public int getCount() {
-            return fragments.size();
-        }
-
-        @Nullable
-        @Override
-        public CharSequence getPageTitle(int position) {
-            return titles.get(position);
-        }
+        cursor.close();
+        return item;
     }
 }
