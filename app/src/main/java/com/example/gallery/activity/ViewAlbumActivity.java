@@ -63,9 +63,7 @@ public class ViewAlbumActivity extends AppCompatActivity {
         name.setText(album.getName());
         ArrayList<Item> items = album.getImages();
         ArrayList<DateAdapter> adapters = new ArrayList<>();
-        for(int i = 0; i < 4; i++){
-            adapters.add(new DateAdapter("Ngay 1/1/2021", items, this));
-        }
+        adapters.add(new DateAdapter("", items, this));
         albumDetailAdapter = new AlbumDetailAdapter(adapters, this);
 
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);

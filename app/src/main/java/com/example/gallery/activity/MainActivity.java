@@ -51,6 +51,7 @@ import com.example.gallery.adapter.DateAdapter;
 import com.example.gallery.fragment.Fragment1;
 import com.example.gallery.fragment.Fragment2;
 import com.example.gallery.fragment.Fragment3;
+import com.example.gallery.model.Album;
 import com.example.gallery.model.Image;
 import com.example.gallery.model.Item;
 import com.example.gallery.model.Video;
@@ -73,6 +74,7 @@ public class MainActivity extends AppCompatActivity {
     ViewPager viewPager;
     String[] listPermissions=new String[]{Manifest.permission.CAMERA};
     static public ArrayList<Item> items = new ArrayList<>();
+    static public ArrayList<Album> albums = new ArrayList<>();
     public static final int PERMISSION_REQUEST_CODE = 100;
     public static final int CAMERA_PERMISSION_CODE = 300;
     public static final int UPDATED_CODE = 222;
@@ -285,6 +287,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void init()  {
+        loadAllAlbums();
         loadAllFiles();
 
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -294,7 +297,7 @@ public class MainActivity extends AppCompatActivity {
         adapter = new PagerAdapter(getSupportFragmentManager());
         actionBar = getSupportActionBar();
         adapter.addFragment(new Fragment1(getAllDateAdapter(items)), "Ảnh/Video");
-        adapter.addFragment(new Fragment2(items), "Album");
+        adapter.addFragment(new Fragment2(albums), "Album");
         adapter.addFragment(new Fragment3(items), "Người");
         viewPager.setAdapter(adapter);
         tabLayout.setupWithViewPager(viewPager);
@@ -489,6 +492,42 @@ public class MainActivity extends AppCompatActivity {
         }
         return true;
     }
+    // chỗ này
+    // load all albums from internal storage to array albums
+    public void loadAllAlbums() {
+        String[] projection = new String[] {MediaStore.MediaColumns.BUCKET_DISPLAY_NAME};
+        String selection = MediaStore.Files.FileColumns.MEDIA_TYPE + "="
+                + MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE
+                + " OR "
+                + MediaStore.Files.FileColumns.MEDIA_TYPE + "="
+                + MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO;
+
+        Uri queryUri = MediaStore.Files.getContentUri("external");
+
+        CursorLoader cursorLoader = new CursorLoader(
+                this,
+                queryUri,
+                projection,
+                selection,
+                null, // Selection args (none).
+                MediaStore.Files.FileColumns.DATE_ADDED + " DESC " // Sort order.
+        );
+
+        Cursor cursor = cursorLoader.loadInBackground();
+        while (cursor.moveToNext()) {
+            Album newAlbum = new Album(cursor.getString((cursor.getColumnIndex(MediaStore.MediaColumns.BUCKET_DISPLAY_NAME))));
+            if (!albums.contains(newAlbum))
+                albums.add(newAlbum);
+        }
+    }
+    // return specific album with given name
+    public void setItemToAlbumWithName(Item item, String name) {
+        for(int i=0; i<albums.size(); i++) {
+            if (albums.get(i).getName().equals(name))
+                albums.get(i).addItem(item);
+        }
+    }
+
     // load all files from internal storage to array items
     public void loadAllFiles() {
         items.clear();
@@ -499,7 +538,9 @@ public class MainActivity extends AppCompatActivity {
                 MediaStore.Files.FileColumns.MEDIA_TYPE,
                 MediaStore.Files.FileColumns.MIME_TYPE,
                 MediaStore.Files.FileColumns.DURATION,
-                MediaStore.Files.FileColumns.TITLE
+                MediaStore.Files.FileColumns.TITLE,
+                // chỗ này
+                MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME
         };
 
         // Return only video and image metadata.
@@ -538,14 +579,22 @@ public class MainActivity extends AppCompatActivity {
                 Geocoder geocoder = new Geocoder(this);
                 List<Address> addresses = geocoder.getFromLocation(latLng[0], latLng[1], 1);
 
+                String address = "";
                 for (Address add : addresses) {
-                    String address = addresses.get(0).getAddressLine(0);
+                    address = addresses.get(0).getAddressLine(0);
                 }
 
-                if (Image.isImageFile(absolutePathOfFile))
-                    items.add(new Image(id, absolutePathOfFile,  addedDate));
+                if (Image.isImageFile(absolutePathOfFile)) {
+                    Image newImage = new Image(id, absolutePathOfFile, addedDate, address);
+                    items.add(newImage);
+                    // chỗ này
+                    setItemToAlbumWithName(newImage, cursor.getString((cursor.getColumnIndex(MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME))));
+                }
                 if (Image.isVideoFile(absolutePathOfFile)) {
-                    items.add(new Video(id, absolutePathOfFile,  addedDate, Image.convertToDuration(durationNum)));
+                    Video newVideo = new Video(id, absolutePathOfFile, addedDate, Image.convertToDuration(durationNum), address);
+                    items.add(newVideo);
+                    // chỗ này
+                    setItemToAlbumWithName(newVideo, cursor.getString((cursor.getColumnIndex(MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME))));
                 }
             }
             catch (Exception ex){
@@ -602,12 +651,15 @@ public class MainActivity extends AppCompatActivity {
 
                 Geocoder geocoder = new Geocoder(this);
                 List<Address> addresses = geocoder.getFromLocation(latLng[0], latLng[1], 1);
-
+                String address = "";
+                for (Address add : addresses) {
+                    address = addresses.get(0).getAddressLine(0);
+                }
 
                 if (Image.isImageFile(absolutePathOfFile))
-                    item = new Image(id, absolutePathOfFile,  addedDate);
+                    item = new Image(id, absolutePathOfFile, addedDate, address);
                 if (Image.isVideoFile(absolutePathOfFile)) {
-                    item = new Video(id, absolutePathOfFile,  addedDate, Image.convertToDuration(durationNum));
+                    item = new Video(id, absolutePathOfFile, addedDate, Image.convertToDuration(durationNum), address);
                 }
             }
             catch (Exception ex){

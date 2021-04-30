@@ -151,7 +151,7 @@ public class ViewItemActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         item = (Item) getIntent().getSerializableExtra("item");
         viewPager = findViewById(R.id.imagesSlider);
-        adapter = createScreenSlideAdapter();
+        adapter = createScreenSlideAdapter(MainActivity.items);
         viewPager.setAdapter(adapter);
         viewPager.setCurrentItem(MainActivity.items.indexOf(item), false);
         ImageButton edit = findViewById(R.id.edit);
@@ -240,10 +240,20 @@ public class ViewItemActivity extends AppCompatActivity {
                 showDeleteDialog();
             }
         });
+
+        ImageButton slideShow = findViewById(R.id.more);
+        slideShow.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(ViewItemActivity.this, SlideShow.class);
+                intent.putExtra("slideShow", MainActivity.items.get(viewPager.getCurrentItem()));
+                startActivity(intent);
+            }
+        });
     }
 
-    private ScreenSlidePagerAdapter createScreenSlideAdapter() {
-        ScreenSlidePagerAdapter adapter = new ScreenSlidePagerAdapter(this,  MainActivity.items, item);
+    private ScreenSlidePagerAdapter createScreenSlideAdapter(ArrayList<Item> items) {
+        ScreenSlidePagerAdapter adapter = new ScreenSlidePagerAdapter(this, items, item);
         return adapter;
     }
 
@@ -337,8 +347,12 @@ public class ViewItemActivity extends AppCompatActivity {
 
                 Geocoder geocoder = new Geocoder(this);
                 List<Address> addresses = geocoder.getFromLocation(latLng[0], latLng[1], 1);
+                String address = "";
+                for (Address add : addresses) {
+                    address = addresses.get(0).getAddressLine(0);
+                }
 
-                item = new Image(id, absolutePathOfFile,  addedDate);
+                item = new Image(id, absolutePathOfFile, addedDate, address);
             }
             catch (Exception ex){
                 System.out.println(absolutePathOfFile);

@@ -11,11 +11,12 @@ import java.io.Serializable;
 
 public class Image extends Item implements Serializable {
 
-    public Image(Long id, String absolutePathOfFile, String addedDate) {
+    public Image(Long id, String absolutePathOfFile, String addedDate, String location) {
         this.id = id;
         this.filePath = absolutePathOfFile;
         super.isImage = true;
         this.addedDate = addedDate;
+        this.location = location;
     }
 
     public Image(Uri uri) {

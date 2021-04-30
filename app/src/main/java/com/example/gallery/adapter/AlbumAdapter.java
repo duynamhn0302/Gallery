@@ -8,12 +8,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.example.gallery.activity.PrivateAlbumActivity;
+import com.example.gallery.activity.ViewAlbumActivity;
 import com.example.gallery.model.Album;
 import com.example.gallery.R;
 
@@ -44,11 +46,12 @@ public class AlbumAdapter extends RecyclerView.Adapter {
         ViewHolder viewHolder = (ViewHolder) holder;
         viewHolder.albumName.setText(album.getName());
         viewHolder.countItems.setText(Integer.toString(album.getCount()));
+        album.setMainImage(album.getImages().get(0));
         Glide.with(context).load(album.getMainImage().getFilePath()).into(viewHolder.item);
         viewHolder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent((Activity) context, PrivateAlbumActivity.class);
+                Intent intent = new Intent((Activity) context, ViewAlbumActivity.class);
                 intent.putExtra("album", list.get(position));
                 ((Activity) context).startActivity(intent);
             }
@@ -68,7 +71,7 @@ public class AlbumAdapter extends RecyclerView.Adapter {
         public ViewHolder(View itemView) {
             super(itemView);
             this.itemView = itemView;
-            item = itemView.findViewById(R.id.item);
+            item = itemView.findViewById(R.id.image);
             albumName = itemView.findViewById(R.id.albumName);
             countItems = itemView.findViewById(R.id.countItems);
 

@@ -31,7 +31,6 @@ public class IntentReceiver extends AppCompatActivity {
         Uri uri = intent.getData();
         String mimeType = intent.getType();
         String path = uri.getPath();
-        System.out.println(path);
         FrameLayout frameLayout = findViewById(R.id.item);
         LayoutInflater inflater = LayoutInflater.from(this);
         Item albumItem = Item.getInstance(this, uri, mimeType);
