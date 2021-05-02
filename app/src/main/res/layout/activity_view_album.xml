@@ -28,11 +28,10 @@
         android:layout_gravity="center"
         android:textSize="30dp"
         android:text="Album1"/>
-    <androidx.recyclerview.widget.RecyclerView
+    <ListView
         android:id="@+id/album"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:ignore="MissingConstraints">
-    </androidx.recyclerview.widget.RecyclerView>
+        android:layout_height="match_parent">
+    </ListView>
 
 </LinearLayout >

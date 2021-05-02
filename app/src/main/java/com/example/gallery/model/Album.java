@@ -1,8 +1,6 @@
 package com.example.gallery.model;
 
 
-import androidx.annotation.Nullable;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 
@@ -21,6 +19,8 @@ public class Album implements Serializable {
 
     public void addItem(Item item){
         items.add(item);
+        if (mainImage == null)
+            mainImage = item;
     }
 
     public Item getMainImage() {
@@ -50,12 +50,4 @@ public class Album implements Serializable {
         return items.size();
     }
 
-    @Override
-    public boolean equals(@Nullable Object obj) {
-        if(obj instanceof Album){
-            Album album = (Album) obj;
-            return this.name.equals(album.getName());
-        } else
-            return false;
-    }
 }

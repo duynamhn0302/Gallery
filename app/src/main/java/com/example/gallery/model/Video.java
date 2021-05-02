@@ -12,13 +12,13 @@ import java.io.Serializable;
 public class Video extends Item implements Serializable {
     private String duration;
 
-    public Video(Long id, String absolutePathOfFile, String addedDate, String convertToDuration, String location) {
+    public Video(Long id, String absolutePathOfFile, String addedDate, String convertToDuration,boolean isLoved ) {
         this.id = id;
         this.filePath = absolutePathOfFile;
         this.isImage = false;
         this.addedDate = addedDate;
         this.duration = convertToDuration;
-        this.location = location;
+        this.isLoved = isLoved;
     }
 
     public Video(Uri uri) {

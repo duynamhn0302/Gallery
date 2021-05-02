@@ -2,7 +2,7 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:orientation="vertical">
 
     <TextView
@@ -13,12 +13,15 @@
         android:text="Ngay 1/2/2021"/>
     <androidx.recyclerview.widget.RecyclerView
         android:layout_margin="1dp"
+        android:clipToPadding="true"
         android:scrollbarThumbVertical="@android:color/transparent"
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:horizontalSpacing="2dp"
-        android:verticalSpacing="2dp">
+        android:verticalSpacing="2dp"
+        android:nestedScrollingEnabled="false">
 
     </androidx.recyclerview.widget.RecyclerView>
+
 </LinearLayout>

@@ -15,6 +15,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
 import androidx.loader.content.CursorLoader;
+import androidx.preference.PreferenceManager;
 import androidx.viewpager.widget.ViewPager;
 
 import android.Manifest;
@@ -25,6 +26,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -57,13 +59,17 @@ import com.example.gallery.model.Item;
 import com.example.gallery.model.Video;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Type;
 import java.net.URLConnection;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -72,9 +78,13 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_VIDEO_CAPTURE = 111;
     TabLayout tabLayout;
     ViewPager viewPager;
+    static public Fragment1 fragment1;
+    Fragment2 fragment2;
+    Fragment3 fragment3;
     String[] listPermissions=new String[]{Manifest.permission.CAMERA};
-    static public ArrayList<Item> items = new ArrayList<>();
     static public ArrayList<Album> albums = new ArrayList<>();
+    static public ArrayList<Item> originalItems = new ArrayList<>();
+    static public ArrayList<Item> items = new ArrayList<>();
     public static final int PERMISSION_REQUEST_CODE = 100;
     public static final int CAMERA_PERMISSION_CODE = 300;
     public static final int UPDATED_CODE = 222;
@@ -85,8 +95,18 @@ public class MainActivity extends AppCompatActivity {
     static public MenuItem record;
     static public Menu menu;
     static public boolean checkAllFlag = false;
+    static public boolean unCheckAllFlag = true;
     static public ActionBar actionBar;
-    PagerAdapter adapter;
+    static  public boolean hideDate = false;
+    static SharedPreferences.Editor prefsEditor;
+    static PagerAdapter adapter;
+    static public ArrayList<String> listLove = new ArrayList<>();
+    public static final String MY_PREFS_NAME = "MyPrefsFile";
+    static int numCol = 4;
+    static public SharedPreferences prefs;
+    static public boolean mainMode = true;
+    static public Context context;
+
     static public void showMenu(){
         actionBar.setDisplayHomeAsUpEnabled(true);
         checkAll.setVisible(true);
@@ -96,6 +116,7 @@ public class MainActivity extends AppCompatActivity {
         menu.setGroupVisible(R.id.group, false);
     }
     static public void hideMenu(){
+        unCheckAllFlag = true;
         actionBar.setDisplayHomeAsUpEnabled(false);
         checkAll.setVisible(false);
         del.setVisible(false);
@@ -130,7 +151,7 @@ public class MainActivity extends AppCompatActivity {
                 else {
                     AlbumDetailAdapter.unCheckAll();
                 }
-
+                fragment1.getAlbumDetailAdapter().notifyDataSetChanged();
             }
         });
 
@@ -199,40 +220,76 @@ public class MainActivity extends AppCompatActivity {
             case R.id.del:
                 showDeleteDialog();
                 break;
+            case R.id.show_hideDate:
+                if (hideDate)
+                    hideDate = false;
+                else
+                    hideDate = true;
+                prefsEditor.putBoolean("hideDate", hideDate);
+                prefsEditor.apply();
+                refesh();
+                break;
+            case R.id.small:
+                numCol = AlbumDetailAdapter.small;
+                prefsEditor.putInt("numCol", numCol);
+                prefsEditor.apply();
+                refesh();
+                break;
+            case R.id.medium:
+                numCol = AlbumDetailAdapter.medium;
+                prefsEditor.putInt("numCol", numCol);
+                prefsEditor.apply();
+                refesh();
+
+                break;
+            case R.id.large:
+                numCol = AlbumDetailAdapter.large;
+                prefsEditor.putInt("numCol", numCol);
+                prefsEditor.apply();
+                refesh();
+                break;
             default:break;
         }
         return super.onOptionsItemSelected(item);
     }
 
-    void refesh(){
+    static public void refesh(){
         Fragment1 fragment1 = (Fragment1) adapter.getItem(0);
-        fragment1.setAdapters(getAllDateAdapter(items));
+        fragment1.setNumCol(numCol);
+        fragment1.setAdapters(getAllDateAdapter(items, context));
         fragment1.getAlbumDetailAdapter().notifyDataSetChanged();
     }
-    public ArrayList<DateAdapter> getAllDateAdapter(ArrayList<Item> items) {
+    public static ArrayList<DateAdapter> getAllDateAdapter(ArrayList<Item> items, Context context) {
+
         ArrayList<DateAdapter> adapters = new ArrayList<>();
         if(items.size() ==0)
             return adapters;
-        String currentDate = null;
-        ArrayList<Item> temp = new ArrayList<>();
-        for (Item item : items) {
-            if (currentDate == null){
-                currentDate = item.getAddedDate();
-                temp.add(item);
-            }
-            else {
-                if (!item.getAddedDate().equals(currentDate)) {
-                    adapters.add(new DateAdapter(currentDate, temp, this));
+        if (!hideDate){
+            String currentDate = null;
+            ArrayList<Item> temp = new ArrayList<>();
+            for (Item item : items) {
+                if (currentDate == null){
                     currentDate = item.getAddedDate();
-                    temp = new ArrayList();
-                    temp.add(item);
-                } else {
                     temp.add(item);
                 }
+                else {
+                    if (!item.getAddedDate().equals(currentDate)) {
+                        adapters.add(new DateAdapter(currentDate, temp, context));
+                        currentDate = item.getAddedDate();
+                        temp = new ArrayList();
+                        temp.add(item);
+                    } else {
+                        temp.add(item);
+                    }
+                }
             }
+            if (!temp.isEmpty())
+                adapters.add(new DateAdapter(currentDate, temp, context));
+
         }
-        if (!temp.isEmpty())
-            adapters.add(new DateAdapter(currentDate, temp, this));
+        else{
+            adapters.add(new DateAdapter("", MainActivity.items, context));
+        }
         return adapters;
     }
 
@@ -245,7 +302,7 @@ public class MainActivity extends AppCompatActivity {
             hideMenu();
             AlbumDetailAdapter.delMode = (AlbumDetailAdapter.delMode + 1) % 2;
             AlbumDetailAdapter.unCheckAll();
-            AlbumDetailAdapter.notifyChanged();
+            fragment1.getAlbumDetailAdapter().notifyDataSetChanged();
             getSupportActionBar().setDisplayHomeAsUpEnabled(false);
             return;
         }
@@ -285,20 +342,45 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
     }
+    static public  void saveArrayList(ArrayList<String> list, String key){
+        SharedPreferences.Editor editor = prefs.edit();
+        Gson gson = new Gson();
+        String json = gson.toJson(list);
+        editor.putString(key, json);
+        editor.apply();
 
+    }
+
+    static public ArrayList<String> getArrayList(String key){
+
+        Gson gson = new Gson();
+        String json = prefs.getString(key, null);
+        if (json == null)
+            return new ArrayList<>();
+        String [] res = gson.fromJson(json, String[].class);
+        return new ArrayList<>(Arrays.asList(res));
+    }
     public void init()  {
-        loadAllAlbums();
+        context = this;
+        prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        prefsEditor = prefs.edit();
+        listLove = getArrayList("listLove");
+        numCol = prefs.getInt("numCol", 4);
+        hideDate = prefs.getBoolean("hideDate", false);
         loadAllFiles();
-
+        originalItems.addAll(items);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         tabLayout = (TabLayout) findViewById(R.id.tab_layout);
         viewPager = (ViewPager) findViewById(R.id.view_pager);
         adapter = new PagerAdapter(getSupportFragmentManager());
         actionBar = getSupportActionBar();
-        adapter.addFragment(new Fragment1(getAllDateAdapter(items)), "Ảnh/Video");
-        adapter.addFragment(new Fragment2(albums), "Album");
-        adapter.addFragment(new Fragment3(items), "Người");
+        fragment1 = new Fragment1(getAllDateAdapter(items, context), numCol);
+        fragment2 = new Fragment2(albums);
+        fragment3 = new Fragment3(items);
+        adapter.addFragment(fragment1, "Ảnh/Video");
+        adapter.addFragment(fragment2, "Album");
+        adapter.addFragment(fragment3, "Người");
         viewPager.setAdapter(adapter);
         tabLayout.setupWithViewPager(viewPager);
     }
@@ -308,7 +390,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_gallery);
-        //Request access storage permission
         if(!checkPermission(this))
             requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE},1000);
         else
@@ -329,24 +410,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
-    String currentPhotoPath;
-
-    private File createImageFile() throws IOException {
-        // Create an image file name
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        String imageFileName = "JPEG_" + timeStamp + "_";
-        File storageDir = getExternalFilesDir(Environment.DIRECTORY_DCIM);
-        File image = File.createTempFile(
-                imageFileName,  /* prefix */
-                ".jpg",         /* suffix */
-                storageDir      /* directory */
-        );
-
-        // Save a file: path for use with ACTION_VIEW intents
-        currentPhotoPath = image.getAbsolutePath();
-        return image;
-    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -492,42 +555,6 @@ public class MainActivity extends AppCompatActivity {
         }
         return true;
     }
-    // chỗ này
-    // load all albums from internal storage to array albums
-    public void loadAllAlbums() {
-        String[] projection = new String[] {MediaStore.MediaColumns.BUCKET_DISPLAY_NAME};
-        String selection = MediaStore.Files.FileColumns.MEDIA_TYPE + "="
-                + MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE
-                + " OR "
-                + MediaStore.Files.FileColumns.MEDIA_TYPE + "="
-                + MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO;
-
-        Uri queryUri = MediaStore.Files.getContentUri("external");
-
-        CursorLoader cursorLoader = new CursorLoader(
-                this,
-                queryUri,
-                projection,
-                selection,
-                null, // Selection args (none).
-                MediaStore.Files.FileColumns.DATE_ADDED + " DESC " // Sort order.
-        );
-
-        Cursor cursor = cursorLoader.loadInBackground();
-        while (cursor.moveToNext()) {
-            Album newAlbum = new Album(cursor.getString((cursor.getColumnIndex(MediaStore.MediaColumns.BUCKET_DISPLAY_NAME))));
-            if (!albums.contains(newAlbum))
-                albums.add(newAlbum);
-        }
-    }
-    // return specific album with given name
-    public void setItemToAlbumWithName(Item item, String name) {
-        for(int i=0; i<albums.size(); i++) {
-            if (albums.get(i).getName().equals(name))
-                albums.get(i).addItem(item);
-        }
-    }
-
     // load all files from internal storage to array items
     public void loadAllFiles() {
         items.clear();
@@ -539,8 +566,7 @@ public class MainActivity extends AppCompatActivity {
                 MediaStore.Files.FileColumns.MIME_TYPE,
                 MediaStore.Files.FileColumns.DURATION,
                 MediaStore.Files.FileColumns.TITLE,
-                // chỗ này
-                MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME
+                MediaStore.MediaColumns.BUCKET_DISPLAY_NAME
         };
 
         // Return only video and image metadata.
@@ -568,6 +594,7 @@ public class MainActivity extends AppCompatActivity {
             Long id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID));
             Long durationNum = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DURATION));
             String addedDate = DateFormat.format("dd/MM/yyyy", new Date(longDate * 1000)).toString();
+            String albumName = cursor.getString((cursor.getColumnIndex(MediaStore.MediaColumns.BUCKET_DISPLAY_NAME)));
 
             ExifInterface exif;
             try{
@@ -579,23 +606,25 @@ public class MainActivity extends AppCompatActivity {
                 Geocoder geocoder = new Geocoder(this);
                 List<Address> addresses = geocoder.getFromLocation(latLng[0], latLng[1], 1);
 
-                String address = "";
                 for (Address add : addresses) {
-                    address = addresses.get(0).getAddressLine(0);
+                    String address = addresses.get(0).getAddressLine(0);
                 }
-
-                if (Image.isImageFile(absolutePathOfFile)) {
-                    Image newImage = new Image(id, absolutePathOfFile, addedDate, address);
-                    items.add(newImage);
-                    // chỗ này
-                    setItemToAlbumWithName(newImage, cursor.getString((cursor.getColumnIndex(MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME))));
+                boolean isLoved = isInLoveList(absolutePathOfFile, MainActivity.listLove);
+                Item item = null;
+                if (Image.isImageFile(absolutePathOfFile)){
+                    item = new Image(id, absolutePathOfFile,  addedDate, isLoved);
                 }
                 if (Image.isVideoFile(absolutePathOfFile)) {
-                    Video newVideo = new Video(id, absolutePathOfFile, addedDate, Image.convertToDuration(durationNum), address);
-                    items.add(newVideo);
-                    // chỗ này
-                    setItemToAlbumWithName(newVideo, cursor.getString((cursor.getColumnIndex(MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME))));
+                    item = new Video(id, absolutePathOfFile,  addedDate, Image.convertToDuration(durationNum), isLoved);
                 }
+                items.add(item);
+                Album album = existsAlbum(albumName);
+                if (album == null){
+                    album = new Album(albumName);
+                    albums.add(album);
+                }
+                album.addItem(item);
+
             }
             catch (Exception ex){
                 // ex.printStackTrace();
@@ -603,6 +632,13 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         cursor.close();
+    }
+    boolean isInLoveList(String absolutePathOfFile, ArrayList<String> listLove){
+        for(String path:listLove){
+            if (path.equals(absolutePathOfFile))
+                return true;
+        }
+        return false;
     }
     private Item newItem()  {
         String[] projection = {
@@ -651,15 +687,13 @@ public class MainActivity extends AppCompatActivity {
 
                 Geocoder geocoder = new Geocoder(this);
                 List<Address> addresses = geocoder.getFromLocation(latLng[0], latLng[1], 1);
-                String address = "";
-                for (Address add : addresses) {
-                    address = addresses.get(0).getAddressLine(0);
-                }
+
+                boolean isLoved = isInLoveList(absolutePathOfFile, MainActivity.listLove);
 
                 if (Image.isImageFile(absolutePathOfFile))
-                    item = new Image(id, absolutePathOfFile, addedDate, address);
+                    item = new Image(id, absolutePathOfFile,  addedDate, false);
                 if (Image.isVideoFile(absolutePathOfFile)) {
-                    item = new Video(id, absolutePathOfFile, addedDate, Image.convertToDuration(durationNum), address);
+                    item = new Video(id, absolutePathOfFile,  addedDate, Image.convertToDuration(durationNum), false);
                 }
             }
             catch (Exception ex){
@@ -668,5 +702,21 @@ public class MainActivity extends AppCompatActivity {
         }
         cursor.close();
         return item;
+    }
+    // chỗ này
+    // load all albums from internal storage to array albums
+
+    // return specific album with given name
+    public Album existsAlbum(String albumName) {
+        for(Album album:albums){
+            if (album.getName().equals(albumName))
+                return album;
+        }
+        return null;
+    }
+    static void clearDelMode(){
+        hideMenu();
+        AlbumDetailAdapter.countCheck = 0;
+        AlbumDetailAdapter.delMode = 0;
     }
 }

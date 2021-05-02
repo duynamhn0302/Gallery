@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.GridView;
+import android.widget.ListView;
 
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -21,12 +22,12 @@ import java.util.ArrayList;
 
 public class Fragment1 extends androidx.fragment.app.Fragment {
     AlbumDetailAdapter albumDetailAdapter;
-    RecyclerView recyclerView;
+    ListView listView;
     private ArrayList<DateAdapter> adapters = new ArrayList<>();
-
-
-    public Fragment1(ArrayList<DateAdapter> adapters) {
+    int numCol = 4;
+    public Fragment1(ArrayList<DateAdapter> adapters, int numCol) {
         this.adapters = adapters;
+        this.numCol = numCol;
     }
 
 
@@ -34,24 +35,22 @@ public class Fragment1 extends androidx.fragment.app.Fragment {
         return albumDetailAdapter;
     }
 
+    public void setNumCol(int numCol) {
+        this.numCol = numCol;
+    }
+
     public void setAdapters(ArrayList<DateAdapter> adapters) {
         this.adapters = adapters;
-        albumDetailAdapter = new AlbumDetailAdapter(adapters, getContext());
-
-        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext());
-        recyclerView.setAdapter(albumDetailAdapter);
-        recyclerView.setLayoutManager(linearLayoutManager);
+        albumDetailAdapter = new AlbumDetailAdapter(adapters, getContext(), numCol);
+        listView.setAdapter(albumDetailAdapter);
     }
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
 
-        albumDetailAdapter = new AlbumDetailAdapter(adapters, getContext());
-
-        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext());
-        recyclerView = (RecyclerView) getView().findViewById(R.id.album);
-        recyclerView.setAdapter(albumDetailAdapter);
-        recyclerView.setLayoutManager(linearLayoutManager);
+        albumDetailAdapter = new AlbumDetailAdapter(adapters, getContext(), numCol);
+        listView = (ListView) getView().findViewById(R.id.album);
+        listView.setAdapter(albumDetailAdapter);
     }
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,

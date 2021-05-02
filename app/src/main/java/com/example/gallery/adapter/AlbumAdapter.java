@@ -8,7 +8,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -46,7 +45,6 @@ public class AlbumAdapter extends RecyclerView.Adapter {
         ViewHolder viewHolder = (ViewHolder) holder;
         viewHolder.albumName.setText(album.getName());
         viewHolder.countItems.setText(Integer.toString(album.getCount()));
-        album.setMainImage(album.getImages().get(0));
         Glide.with(context).load(album.getMainImage().getFilePath()).into(viewHolder.item);
         viewHolder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override

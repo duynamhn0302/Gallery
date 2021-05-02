@@ -1,5 +1,9 @@
 package com.example.gallery.activity;
 
+import android.os.Bundle;
+import android.os.Handler;
+import android.view.View;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
@@ -7,16 +11,11 @@ import androidx.viewpager2.widget.CompositePageTransformer;
 import androidx.viewpager2.widget.MarginPageTransformer;
 import androidx.viewpager2.widget.ViewPager2;
 
-import android.os.Bundle;
-import android.os.Handler;
-import android.view.View;
-
 import com.example.gallery.R;
 import com.example.gallery.adapter.SlideShowAdapter;
 import com.example.gallery.model.Item;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class SlideShow extends AppCompatActivity {
     private ViewPager2 viewPager2;

@@ -20,7 +20,7 @@ import java.util.ArrayList;
 
 public class Fragment2 extends androidx.fragment.app.Fragment {
 
-    private ArrayList<Album> albums = new ArrayList<>();
+    ArrayList<Album> albums = new ArrayList<>();
     AlbumAdapter adapter;
     RecyclerView recyclerView;
     public Fragment2() {

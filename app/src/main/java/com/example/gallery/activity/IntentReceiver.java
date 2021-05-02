@@ -1,6 +1,5 @@
 package com.example.gallery.activity;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -31,6 +30,7 @@ public class IntentReceiver extends AppCompatActivity {
         Uri uri = intent.getData();
         String mimeType = intent.getType();
         String path = uri.getPath();
+        System.out.println(path);
         FrameLayout frameLayout = findViewById(R.id.item);
         LayoutInflater inflater = LayoutInflater.from(this);
         Item albumItem = Item.getInstance(this, uri, mimeType);

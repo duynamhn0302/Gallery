@@ -18,7 +18,7 @@ public abstract class Item implements Serializable {
     private int headerId;
     protected boolean isImage;
     boolean isChecked = false;
-
+    protected boolean isLoved = false;
     public void setChecked(boolean checked) {
         isChecked = checked;
     }
@@ -39,9 +39,20 @@ public abstract class Item implements Serializable {
         Item item = (Item) obj;
         return filePath.equals(((Item) obj).getFilePath());
     }
-
     public long getId() {
         return id;
+    }
+
+    public void setLoved(boolean loved) {
+        isLoved = loved;
+    }
+
+    public boolean isLoved() {
+        return isLoved;
+    }
+
+    public boolean isChecked() {
+        return isChecked;
     }
 
     public void setId(long id) {

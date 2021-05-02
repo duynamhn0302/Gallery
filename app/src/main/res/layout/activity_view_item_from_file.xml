@@ -52,6 +52,7 @@
             android:layout_height="30dp"
             android:src="@drawable/ic_outline_edit_24"/>
         <ImageButton
+            android:id="@+id/love"
             android:background="@null"
             android:layout_width="wrap_content"
             android:layout_weight="1"

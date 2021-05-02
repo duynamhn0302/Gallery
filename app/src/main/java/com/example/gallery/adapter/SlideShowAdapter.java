@@ -15,7 +15,6 @@ import com.example.gallery.R;
 import com.example.gallery.model.Item;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class SlideShowAdapter extends RecyclerView.Adapter<SlideShowAdapter.SliderViewHolder> {
     private ArrayList<Item> sliderItems;

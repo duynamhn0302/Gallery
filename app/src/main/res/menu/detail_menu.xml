@@ -2,13 +2,12 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/edit"
-        android:icon="@drawable/ic_baseline_edit_24"
-        android:title="TODO"
-        app:showAsAction="always"/>
+        android:id="@+id/copy"
+        android:title="Sao chép"/>
     <item
-        android:id="@+id/del"
-        android:icon="@drawable/ic_baseline_delete_24"
-        android:title="TODO"
-        app:showAsAction="always"/>
+        android:id="@+id/wallpaper"
+        android:title="Đặt làm hình nền"/>
+    <item
+        android:id="@+id/slideshow"
+        android:title="Trình chiếu"/>
 </menu>

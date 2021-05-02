@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.GridView;
@@ -22,9 +21,11 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.gallery.R;
 import com.example.gallery.activity.MainActivity;
+import com.example.gallery.activity.ViewAlbumActivity;
 import com.example.gallery.activity.ViewItemActivity;
-import com.example.gallery.model.Image;
 import com.example.gallery.model.Item;
+
+import org.apache.log4j.chainsaw.Main;
 
 import java.util.ArrayList;
 
@@ -80,7 +81,15 @@ public class DateAdapter extends RecyclerView.Adapter {
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-        CheckBox check = null;
+        holder.itemView.post(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                AlbumDetailAdapter.cellHeight = holder.itemView.getHeight();// this will give you cell height dynamically
+
+            }
+        });
         if (items.get(position).isImage())
         {
             ImageViewHolder imageViewHolder = (ImageViewHolder)holder;
@@ -88,20 +97,46 @@ public class DateAdapter extends RecyclerView.Adapter {
             ImageView imageView = imageViewHolder.imageView;
             Glide.with(context).load(items.get(position).getFilePath()).into(imageView);
             imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            check = imageViewHolder.view.findViewById(R.id.check);
-            CheckBox finalCheck = check;
-            imageView.setOnClickListener(new View.OnClickListener() {
+            CheckBox check = imageViewHolder.view.findViewById(R.id.check);
+            if (AlbumDetailAdapter.delMode == 1)
+                check.setVisibility(CheckBox.VISIBLE);
+            else
+                check.setVisibility(CheckBox.INVISIBLE);
+            if (items.get(position).getChecked())
+                check.setChecked(true);
+            else
+                check.setChecked(false);
+
+            check.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    AlbumDetailAdapter.countCheck += isChecked ? 1 : -1;
+
+
+                    CheckBox checkBox = (CheckBox)MainActivity.checkAll.getActionView();
+                    if(AlbumDetailAdapter.countCheck == MainActivity.items.size()){
+                        checkBox.setChecked(true);
+                    }
+                    else{
+                        checkBox.setChecked(false);
+                        MainActivity.checkAllFlag = false;
+                    }
+                    System.out.println("All: " + MainActivity.items.size());
+                    System.out.println("Count: " + AlbumDetailAdapter.countCheck);
+                }
+            });
+            imageViewHolder.view.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     //Do some work here
                     if (AlbumDetailAdapter.delMode == 1){
                         if (items.get(position).getChecked()){
-                            finalCheck.setChecked(false);
+                            check.setChecked(false);
                             items.get(position).setChecked(false);
 
                         }
                         else{
-                            finalCheck.setChecked(true);
+                            check.setChecked(true);
                             items.get(position).setChecked(true);
 
                         }
@@ -114,22 +149,29 @@ public class DateAdapter extends RecyclerView.Adapter {
                 }
             });
 
-            imageView.setOnLongClickListener(new View.OnLongClickListener() {
+            imageViewHolder.view.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
                     AlbumDetailAdapter.delMode = (AlbumDetailAdapter.delMode + 1) % 2;
                     if (AlbumDetailAdapter.delMode == 1){
-                        finalCheck.setChecked(true);
+                        check.setChecked(true);
                         items.get(position).setChecked(true);
-                        MainActivity.showMenu();
-                        MainActivity.actionBar.setDisplayHomeAsUpEnabled(true);
+                        if(MainActivity.mainMode)
+                            MainActivity.showMenu();
+                        else
+                            ViewAlbumActivity.showMenu();
                     }
                     else{
                         AlbumDetailAdapter.unCheckAll();
-                        MainActivity.hideMenu();
-                        MainActivity.actionBar.setDisplayHomeAsUpEnabled(false);
+                        if(MainActivity.mainMode)
+                            MainActivity.hideMenu();
+                        else
+                            ViewAlbumActivity.hideMenu();
                     }
-                    AlbumDetailAdapter.notifyChanged();
+                    if(MainActivity.mainMode)
+                        MainActivity.fragment1.getAlbumDetailAdapter().notifyDataSetChanged();
+                    else
+                        ViewAlbumActivity.albumDetailAdapter.notifyDataSetChanged();
                     return true;
                 }
             });
@@ -141,20 +183,46 @@ public class DateAdapter extends RecyclerView.Adapter {
             thumbnail.setScaleType(ImageView.ScaleType.CENTER_CROP);
             TextView textView = videoViewHolder.duration;
             textView.setText(items.get(position).getDuration());
-            check = videoViewHolder.view.findViewById(R.id.check);
-            CheckBox finalCheck1 = check;
-            thumbnail.setOnClickListener(new View.OnClickListener() {
+            CheckBox check = videoViewHolder.view.findViewById(R.id.check);
+            if (AlbumDetailAdapter.delMode == 1)
+                check.setVisibility(CheckBox.VISIBLE);
+            else
+                check.setVisibility(CheckBox.INVISIBLE);
+            if (items.get(position).getChecked())
+                check.setChecked(true);
+            else
+                check.setChecked(false);
+
+            check.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    AlbumDetailAdapter.countCheck += isChecked ? 1 : -1;
+
+
+                    CheckBox checkBox = (CheckBox)MainActivity.checkAll.getActionView();
+                    if(AlbumDetailAdapter.countCheck == MainActivity.items.size()){
+                        checkBox.setChecked(true);
+                    }
+                    else{
+                        checkBox.setChecked(false);
+                        MainActivity.checkAllFlag = false;
+                    }
+                    System.out.println("All: " + MainActivity.items.size());
+                    System.out.println("Count: " + AlbumDetailAdapter.countCheck);
+                }
+            });
+            videoViewHolder.view.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     //Do some work here
                     if (AlbumDetailAdapter.delMode == 1){
                         if (items.get(position).getChecked()){
-                            finalCheck1.setChecked(false);
+                            check.setChecked(false);
                             items.get(position).setChecked(false);
 
                         }
                         else{
-                            finalCheck1.setChecked(true);
+                            check.setChecked(true);
                             items.get(position).setChecked(true);
 
                         }
@@ -167,56 +235,32 @@ public class DateAdapter extends RecyclerView.Adapter {
                 }
             });
 
-            thumbnail.setOnLongClickListener(new View.OnLongClickListener() {
+            videoViewHolder.view.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
                     AlbumDetailAdapter.delMode = (AlbumDetailAdapter.delMode + 1) % 2;
                     if (AlbumDetailAdapter.delMode == 1){
-                        finalCheck1.setChecked(true);
+                        check.setChecked(true);
                         items.get(position).setChecked(true);
-                        MainActivity.showMenu();
-                        MainActivity.actionBar.setDisplayHomeAsUpEnabled(true);
+                        if(MainActivity.mainMode)
+                            MainActivity.showMenu();
+                        else
+                            ViewAlbumActivity.showMenu();
                     }
                     else{
                         AlbumDetailAdapter.unCheckAll();
-                        MainActivity.hideMenu();
-                        MainActivity.actionBar.setDisplayHomeAsUpEnabled(false);
+                        if(MainActivity.mainMode)
+                            MainActivity.hideMenu();
+                        else
+                            ViewAlbumActivity.hideMenu();
                     }
-                   AlbumDetailAdapter.notifyChanged();
+                    MainActivity.fragment1.getAlbumDetailAdapter().notifyDataSetChanged();
                     return true;
                 }
             });
         }
-        if (AlbumDetailAdapter.delMode == 1)
-            check.setVisibility(CheckBox.VISIBLE);
-        else
-            check.setVisibility(CheckBox.INVISIBLE);
-        if (items.get(position).getChecked())
-            check.setChecked(true);
-        else
-            check.setChecked(false);
-        check.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 
-                if(isChecked){
-                    AlbumDetailAdapter.countCheck++;
-                }
-                else{
-                    AlbumDetailAdapter.countCheck--;
-                    MainActivity.checkAllFlag = false;
-                }
-                CheckBox checkBox = (CheckBox)MainActivity.checkAll.getActionView();
-                if(MainActivity.checkAllFlag || AlbumDetailAdapter.countCheck == MainActivity.items.size()){
-                    checkBox.setChecked(true);
-                    MainActivity.checkAllFlag = true;
-                }
-                else{
-                    checkBox.setChecked(false);
-                    MainActivity.checkAllFlag = false;
-                }
-            }
-        });
+
 
     }
 
