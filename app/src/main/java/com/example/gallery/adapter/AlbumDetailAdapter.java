@@ -26,34 +26,34 @@ import org.apache.log4j.chainsaw.Main;
 import java.util.ArrayList;
 
 public class AlbumDetailAdapter extends BaseAdapter {
-    static public ArrayList<DateAdapter> list = new ArrayList<>();
+    public ArrayList<DateAdapter> list = new ArrayList<>();
     private Context context;
     static public  Integer delMode = 0;
-    static public Integer countCheck = 0;
     static final public int small = 5;
     static final public int medium = 4;
     static final public int large = 3;
     public int numCol = 4;
-    static public int cellHeight = 0;
+    RecyclerView recyclerView;
     public AlbumDetailAdapter(ArrayList<DateAdapter> list, Context context, int numCol){
         this.numCol = numCol;
         this.list = list;
         this.context = context;
     }
+
+    public  ArrayList<DateAdapter> getList() {
+        return list;
+    }
+
     static public void checkAll() {
-        for(Item item : MainActivity.items)
-            item.setChecked(true);
-        countCheck = MainActivity.items.size();
-        MainActivity.checkAllFlag = true;
-        MainActivity.unCheckAllFlag = false;
+        MainActivity.buffer.clear();
+        if (MainActivity.mainMode)
+            MainActivity.buffer.addAll(MainActivity.items);
+        else
+            MainActivity.buffer.addAll(MainActivity.curAlbum.getImages());
 
     }
     static public void unCheckAll(){
-        for(Item item : MainActivity.items)
-            item.setChecked(false);
-        countCheck = 0;
-        MainActivity.checkAllFlag = false;
-        MainActivity.unCheckAllFlag = true;
+        MainActivity.buffer.clear();
     }
 
     @Override
@@ -76,27 +76,14 @@ public class AlbumDetailAdapter extends BaseAdapter {
         LayoutInflater inflater = LayoutInflater.from(context);
         @SuppressLint("ViewHolder") View albumDetailView = inflater.inflate(R.layout.items_by_date, parent, false);
         TextView date = albumDetailView.findViewById(R.id.date);
-        RecyclerView recyclerView = albumDetailView.findViewById(R.id.recyclerView);
+        recyclerView = albumDetailView.findViewById(R.id.recyclerView);
         if(MainActivity.hideDate)
             date.setVisibility(View.INVISIBLE);
         date.setText(list.get(position).getDate());
         recyclerView.setAdapter(list.get(position));
         GridLayoutManager gridLayoutManager = new GridLayoutManager(context, numCol);
         recyclerView.setLayoutManager(gridLayoutManager);
-        int height = parent.getMeasuredHeight();
-        ViewGroup.LayoutParams params = recyclerView.getLayoutParams();
 
-        recyclerView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            @Override
-            public void onGlobalLayout() {
-                int numRows = list.get(position).getImages().size() / numCol +  1;
-                if ( numRows > 10){
-                    params.height = numRows * cellHeight;
-                    recyclerView.setLayoutParams(params);
-                }
-                recyclerView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-            }
-        });
         return albumDetailView;
     }
 

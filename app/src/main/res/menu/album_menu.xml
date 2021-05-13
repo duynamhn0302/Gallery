@@ -9,6 +9,16 @@
         android:title="TODO"
         app:showAsAction="always"/>
     <item
+        android:id="@+id/unlock"
+        android:icon="@drawable/ic_baseline_lock_open_24"
+        android:title="TODO"
+        app:showAsAction="always"/>
+    <item
+        android:id="@+id/addTo"
+        android:icon="@drawable/ic_outline_add_to_photos_24"
+        android:title="TODO"
+        app:showAsAction="always"/>
+    <item
         android:id="@+id/checkAll"
         android:checkable="true"
         android:title="All"
@@ -19,16 +29,22 @@
     <group android:id="@+id/group">
         <item
             android:id="@+id/show_hideDate"
-            android:title="Ẩn/hiện ngày tháng"/>
+            android:title="@string/hide_show_date"/>
         <item
             android:id="@+id/small"
-            android:title="Bố cục ảnh nhỏ"/>
+            android:title="@string/small"/>
         <item
             android:id="@+id/medium"
-            android:title="Bố cục ảnh trung bình"/>
+            android:title="@string/medium"/>
         <item
             android:id="@+id/large"
-            android:title="Bố cục ảnh lớn"/>
+            android:title="@string/large"/>
+        <item
+            android:id="@+id/delAlbum"
+            android:title="@string/delete_album"/>
+        <item
+            android:id="@+id/changepass"
+            android:title="@string/change_pass"/>
     </group>
 
 </menu>

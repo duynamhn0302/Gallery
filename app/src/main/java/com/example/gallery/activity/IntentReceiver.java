@@ -4,14 +4,17 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.MediaController;
 import android.widget.Toast;
 import android.widget.VideoView;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import com.bumptech.glide.Glide;
 import com.example.gallery.R;
@@ -21,21 +24,41 @@ import com.github.chrisbanes.photoview.PhotoView;
 
 
 public class IntentReceiver extends AppCompatActivity {
-
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+        //noinspection SimplifiableIfStatement
+        switch(id){
+            case android.R.id.home:
+                onBackPressed();
+                return true;
+            default:break;
+        }
+        return super.onOptionsItemSelected(item);
+    }
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_view_item_from_file);
+        LinearLayout l = findViewById(R.id.toolBottom);
+        l.setVisibility(View.INVISIBLE);
         Intent intent = getIntent();
         Uri uri = intent.getData();
         String mimeType = intent.getType();
         String path = uri.getPath();
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayShowTitleEnabled(false);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         System.out.println(path);
         FrameLayout frameLayout = findViewById(R.id.item);
         LayoutInflater inflater = LayoutInflater.from(this);
         Item albumItem = Item.getInstance(this, uri, mimeType);
         if (albumItem == null) {
-            Toast.makeText(this, "getString(R.string.error)", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.error), Toast.LENGTH_SHORT).show();
             this.finish();
             return;
         }

@@ -1,14 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
-        <!-- Customize your theme here. -->
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
+    <style name="LightTheme" parent="Theme.AppCompat.Light.NoActionBar"/>
+    <style name="DarkTheme" parent="Theme.MaterialComponents.NoActionBar">
     </style>
 
-    <style name="ToolbarTheme" parent="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
+    <style name="ToolbarTheme" parent="@style/Theme.MaterialComponents.NoActionBar">
         <!-- android:textColorPrimary is the color of the title text in the Toolbar  -->
         <item name="android:textColorPrimary">@android:color/holo_blue_light</item>
         <!-- actionMenuTextColor is the color of the text of action (menu) items  -->
@@ -22,11 +18,6 @@
         <!-- Applied to framework control highlights (i.e ripples or list selectors) -->
         <item name="colorControlHighlight">@color/colorPrimaryDark</item>
 
-        <!-- Enable these below if you want clicking icons to trigger a ripple effect -->
-        <!--
-        <item name="selectableItemBackground">?android:selectableItemBackground</item>
-        <item name="selectableItemBackgroundBorderless">?android:selectableItemBackground</item>
-        -->
     </style>
 
     <!-- This configures the styles for the title within the Toolbar  -->

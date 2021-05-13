@@ -12,9 +12,6 @@
         android:layout_height="wrap_content"
         android:background="@null"
         android:minHeight="?attr/actionBarSize"
-        android:theme="?attr/actionBarTheme"
-        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
-        app:theme="@style/ThemeOverlay.AppCompat.Dark"
         android:gravity="center">
 
     </androidx.appcompat.widget.Toolbar>
@@ -26,54 +23,6 @@
         android:layout_height="match_parent"
         android:layout_width="match_parent" />
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginVertical="20dp">
-        <ImageButton
-            android:id="@+id/info"
-            android:background="@null"
-            android:layout_width="wrap_content"
-            android:layout_weight="1"
-            android:layout_height="30dp"
-            android:src="@drawable/ic_baseline_info_24"/>
-        <ImageButton
-            android:id="@+id/share"
-            android:background="@null"
-            android:layout_width="wrap_content"
-            android:layout_weight="1"
-            android:layout_height="30dp"
-            android:src="@drawable/ic_baseline_ios_share_24"/>
-        <ImageButton
-            android:id="@+id/edit"
-            android:background="@null"
-            android:layout_width="wrap_content"
-            android:layout_weight="1"
-            android:layout_height="30dp"
-            android:src="@drawable/ic_outline_edit_24"/>
-        <ImageButton
-            android:id="@+id/love"
-            android:background="@null"
-            android:layout_width="wrap_content"
-            android:layout_weight="1"
-            android:layout_height="30dp"
-            android:src="@drawable/ic_baseline_favorite_border_24"/>
-        <ImageButton
-            android:background="@null"
-            android:layout_width="wrap_content"
-            android:layout_weight="1"
-            android:layout_height="30dp"
-            android:src="@drawable/ic_baseline_delete_outline_24"/>
-
-        <ImageButton
-            android:id="@+id/more"
-            android:background="@null"
-            android:layout_width="wrap_content"
-            android:layout_weight="1"
-            android:layout_height="30dp"
-            android:src="@drawable/ic_outline_pending_24"/>
-
-    </LinearLayout>
 
 
 </LinearLayout>

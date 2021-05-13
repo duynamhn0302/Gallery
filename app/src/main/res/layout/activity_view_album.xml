@@ -9,25 +9,20 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/colorPrimary"
-        android:minHeight="?attr/actionBarSize"
-        android:theme="?attr/actionBarTheme"
-        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
-        app:theme="@style/ThemeOverlay.AppCompat.Dark"
-        android:gravity="center">
+          android:minHeight="?attr/actionBarSize"
+          android:gravity="center">
 
     </androidx.appcompat.widget.Toolbar>
     <TextView
         android:id="@+id/albumName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/colorPrimary"
-        android:paddingBottom="20dp"
+          android:paddingBottom="20dp"
         android:paddingLeft="20dp"
         android:layout_marginBottom ="20dp"
         android:layout_gravity="center"
         android:textSize="30dp"
-        android:text="Album1"/>
+        android:text="@string/album_name"/>
     <ListView
         android:id="@+id/album"
         android:layout_width="match_parent"

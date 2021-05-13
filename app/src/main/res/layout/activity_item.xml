@@ -12,10 +12,7 @@
         android:layout_height="wrap_content"
         android:background="@null"
         android:minHeight="?attr/actionBarSize"
-        android:theme="?attr/actionBarTheme"
-        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
-        app:theme="@style/ThemeOverlay.AppCompat.Dark"
-        android:gravity="center">
+          android:gravity="center">
 
     </androidx.appcompat.widget.Toolbar>
 

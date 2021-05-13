@@ -8,12 +8,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
-import android.widget.GridView;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.VideoView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -23,7 +19,9 @@ import com.example.gallery.R;
 import com.example.gallery.activity.MainActivity;
 import com.example.gallery.activity.ViewAlbumActivity;
 import com.example.gallery.activity.ViewItemActivity;
+import com.example.gallery.model.Album;
 import com.example.gallery.model.Item;
+
 
 import org.apache.log4j.chainsaw.Main;
 
@@ -38,7 +36,6 @@ public class DateAdapter extends RecyclerView.Adapter {
     public DateAdapter(String date) {
         this.date = date;
     }
-
     public DateAdapter(String date, ArrayList<Item> items, Context context) {
         this.date = date;
         this.context = context;
@@ -63,7 +60,14 @@ public class DateAdapter extends RecyclerView.Adapter {
 
 
 
+    RecyclerView mRecyclerView;
 
+
+    @Override
+    public void onAttachedToRecyclerView(RecyclerView recyclerView) {
+        super.onAttachedToRecyclerView(recyclerView);
+        mRecyclerView = recyclerView;
+    }
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -81,15 +85,21 @@ public class DateAdapter extends RecyclerView.Adapter {
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-        holder.itemView.post(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                AlbumDetailAdapter.cellHeight = holder.itemView.getHeight();// this will give you cell height dynamically
 
+        if (position == 0){
+            int numRows = items.size() / MainActivity.numCol +  1;
+            if ( numRows > 10){
+                holder.itemView.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        ViewGroup.LayoutParams params = mRecyclerView.getLayoutParams();
+                        params.height = numRows * holder.itemView.getHeight();
+                        mRecyclerView.setLayoutParams(params);
+                    }
+                });
             }
-        });
+        }
+
         if (items.get(position).isImage())
         {
             ImageViewHolder imageViewHolder = (ImageViewHolder)holder;
@@ -102,27 +112,37 @@ public class DateAdapter extends RecyclerView.Adapter {
                 check.setVisibility(CheckBox.VISIBLE);
             else
                 check.setVisibility(CheckBox.INVISIBLE);
-            if (items.get(position).getChecked())
+            if (MainActivity.buffer.contains(items.get(position)))
                 check.setChecked(true);
             else
                 check.setChecked(false);
-
             check.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                    AlbumDetailAdapter.countCheck += isChecked ? 1 : -1;
+                    if(isChecked){
+                        if (!MainActivity.buffer.contains(items.get(position))){
+                            {
+                                MainActivity.buffer.add(items.get(position));
+                            }
 
+                    }
+                    else {
+                            if (MainActivity.buffer.contains(items.get(position))) {
+                                {
+                                    MainActivity.buffer.remove(items.get(position));
+                                }
+
+                            }
+                        }
+                    }
 
                     CheckBox checkBox = (CheckBox)MainActivity.checkAll.getActionView();
-                    if(AlbumDetailAdapter.countCheck == MainActivity.items.size()){
+                    if(MainActivity.buffer.size() == MainActivity.items.size()){
                         checkBox.setChecked(true);
                     }
                     else{
                         checkBox.setChecked(false);
-                        MainActivity.checkAllFlag = false;
                     }
-                    System.out.println("All: " + MainActivity.items.size());
-                    System.out.println("Count: " + AlbumDetailAdapter.countCheck);
                 }
             });
             imageViewHolder.view.setOnClickListener(new View.OnClickListener() {
@@ -130,14 +150,15 @@ public class DateAdapter extends RecyclerView.Adapter {
                 public void onClick(View view) {
                     //Do some work here
                     if (AlbumDetailAdapter.delMode == 1){
-                        if (items.get(position).getChecked()){
+                        if (MainActivity.buffer.contains(items.get(position))){
                             check.setChecked(false);
-                            items.get(position).setChecked(false);
+                            MainActivity.buffer.remove(items.get(position));
 
                         }
                         else{
                             check.setChecked(true);
-                            items.get(position).setChecked(true);
+                            if (!MainActivity.buffer.contains(items.get(position)))
+                                MainActivity.buffer.add(items.get(position));
 
                         }
 
@@ -155,7 +176,8 @@ public class DateAdapter extends RecyclerView.Adapter {
                     AlbumDetailAdapter.delMode = (AlbumDetailAdapter.delMode + 1) % 2;
                     if (AlbumDetailAdapter.delMode == 1){
                         check.setChecked(true);
-                        items.get(position).setChecked(true);
+                        if (!MainActivity.buffer.contains(items.get(position)))
+                            MainActivity.buffer.add(items.get(position));
                         if(MainActivity.mainMode)
                             MainActivity.showMenu();
                         else
@@ -188,7 +210,7 @@ public class DateAdapter extends RecyclerView.Adapter {
                 check.setVisibility(CheckBox.VISIBLE);
             else
                 check.setVisibility(CheckBox.INVISIBLE);
-            if (items.get(position).getChecked())
+            if (MainActivity.buffer.contains(items.get(position)))
                 check.setChecked(true);
             else
                 check.setChecked(false);
@@ -196,34 +218,47 @@ public class DateAdapter extends RecyclerView.Adapter {
             check.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                    AlbumDetailAdapter.countCheck += isChecked ? 1 : -1;
+                    if(isChecked){
+                        if (!MainActivity.buffer.contains(items.get(position))){
+                            {
+                                MainActivity.buffer.add(items.get(position));
+                            }
 
+                        }
+                        else {
+                            if (MainActivity.buffer.contains(items.get(position))){
+                                {
+                                    MainActivity.buffer.remove(items.get(position));
+                                }
 
+                            }
+                        }
+                    }
                     CheckBox checkBox = (CheckBox)MainActivity.checkAll.getActionView();
-                    if(AlbumDetailAdapter.countCheck == MainActivity.items.size()){
+                    if(MainActivity.buffer.size() == MainActivity.items.size()){
                         checkBox.setChecked(true);
                     }
                     else{
                         checkBox.setChecked(false);
-                        MainActivity.checkAllFlag = false;
                     }
-                    System.out.println("All: " + MainActivity.items.size());
-                    System.out.println("Count: " + AlbumDetailAdapter.countCheck);
                 }
             });
+
+
             videoViewHolder.view.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     //Do some work here
                     if (AlbumDetailAdapter.delMode == 1){
-                        if (items.get(position).getChecked()){
+                        if (MainActivity.buffer.contains(items.get(position))){
                             check.setChecked(false);
-                            items.get(position).setChecked(false);
+                            MainActivity.buffer.remove(items.get(position));
 
                         }
                         else{
                             check.setChecked(true);
-                            items.get(position).setChecked(true);
+                            if (!MainActivity.buffer.contains(items.get(position)))
+                                MainActivity.buffer.add(items.get(position));
 
                         }
 
@@ -231,6 +266,7 @@ public class DateAdapter extends RecyclerView.Adapter {
                     }
                     Intent intent = new Intent((Activity) context, ViewItemActivity.class);
                     intent.putExtra("item", items.get(position));
+                    ((Activity) context).startActivity(intent);
                     ((Activity) context).startActivityForResult(intent, MainActivity.UPDATED_CODE);
                 }
             });
@@ -241,7 +277,8 @@ public class DateAdapter extends RecyclerView.Adapter {
                     AlbumDetailAdapter.delMode = (AlbumDetailAdapter.delMode + 1) % 2;
                     if (AlbumDetailAdapter.delMode == 1){
                         check.setChecked(true);
-                        items.get(position).setChecked(true);
+                        if (!MainActivity.buffer.contains(items.get(position)))
+                            MainActivity.buffer.add(items.get(position));
                         if(MainActivity.mainMode)
                             MainActivity.showMenu();
                         else
@@ -254,7 +291,10 @@ public class DateAdapter extends RecyclerView.Adapter {
                         else
                             ViewAlbumActivity.hideMenu();
                     }
-                    MainActivity.fragment1.getAlbumDetailAdapter().notifyDataSetChanged();
+                    if(MainActivity.mainMode)
+                        MainActivity.fragment1.getAlbumDetailAdapter().notifyDataSetChanged();
+                    else
+                        ViewAlbumActivity.albumDetailAdapter.notifyDataSetChanged();
                     return true;
                 }
             });

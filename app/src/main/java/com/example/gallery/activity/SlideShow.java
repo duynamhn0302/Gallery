@@ -17,9 +17,17 @@ import com.example.gallery.model.Item;
 
 import java.util.ArrayList;
 
-public class SlideShow extends AppCompatActivity {
+public class SlideShow extends BaseActivity {
     private ViewPager2 viewPager2;
     private Handler sliderHandler = new Handler();
+    int i = 0;
+
+    @Override
+    public void onBackPressed() {
+        MainActivity.loadAllFiles();
+        MainActivity.refesh();
+        super.onBackPressed();
+    }
 
     @Override
     protected void onResume() {
@@ -36,19 +44,23 @@ public class SlideShow extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        BaseActivity.changeLanguage(MainActivity.language, this);
+        BaseActivity.changeTheme(MainActivity.light, this);
         setContentView(R.layout.activity_slide_show);
         viewPager2 = findViewById(R.id.viewPagerImageSlideshow);
 
         ArrayList<Item> sliderItems = new ArrayList<>();
-        sliderItems = MainActivity.items;
-
+        if (MainActivity.mainMode)
+            sliderItems = MainActivity.items;
+        else
+            sliderItems = MainActivity.curAlbum.getImages();
         viewPager2.setAdapter(new SlideShowAdapter(sliderItems, viewPager2, this));
-
+        i = getIntent().getIntExtra("number", 0);
         viewPager2.setClipToPadding(false);
         viewPager2.setClipChildren(false);
         viewPager2.setOffscreenPageLimit(3);
         viewPager2.getChildAt(0).setOverScrollMode(RecyclerView.OVER_SCROLL_NEVER);
-
+        viewPager2.setCurrentItem(i);
         CompositePageTransformer compositePageTransformer = new CompositePageTransformer();
         compositePageTransformer.addTransformer(new MarginPageTransformer(40));
         compositePageTransformer.addTransformer(new ViewPager2.PageTransformer() {

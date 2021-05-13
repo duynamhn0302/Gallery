@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -13,6 +14,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.example.gallery.activity.MainActivity;
 import com.example.gallery.activity.PrivateAlbumActivity;
 import com.example.gallery.activity.ViewAlbumActivity;
 import com.example.gallery.model.Album;
@@ -20,7 +22,7 @@ import com.example.gallery.R;
 
 import java.util.ArrayList;
 
-public class AlbumAdapter extends RecyclerView.Adapter {
+public class AlbumAdapter extends BaseAdapter {
     private ArrayList<Album> list = new ArrayList<>();
     private Context context;
     public AlbumAdapter(ArrayList<Album>  list, Context context) {
@@ -32,48 +34,44 @@ public class AlbumAdapter extends RecyclerView.Adapter {
     }
     @NonNull
     @Override
-    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        Context context = parent.getContext();
-        LayoutInflater inflater = LayoutInflater.from(context);
-        View albumView = inflater.inflate(R.layout.album, parent, false);
-        return new ViewHolder(albumView);
+    public int getCount() {
+        return list.size();
     }
 
     @Override
-    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+    public Object getItem(int position) {
+        return list.get(position);
+    }
+
+    @Override
+    public long getItemId(int position) {
+        return position;
+    }
+
+    @Override
+    public View getView(int position, View convertView, ViewGroup parent) {
+        Context context = parent.getContext();
+        LayoutInflater inflater = LayoutInflater.from(context);
         Album album = list.get(position);
-        ViewHolder viewHolder = (ViewHolder) holder;
-        viewHolder.albumName.setText(album.getName());
-        viewHolder.countItems.setText(Integer.toString(album.getCount()));
-        Glide.with(context).load(album.getMainImage().getFilePath()).into(viewHolder.item);
-        viewHolder.itemView.setOnClickListener(new View.OnClickListener() {
+        View albumView = inflater.inflate(R.layout.album, parent, false);
+        ImageView item = albumView.findViewById(R.id.image);
+        TextView albumName = albumView.findViewById(R.id.albumName);
+        TextView countItems = albumView.findViewById(R.id.countItems);
+        albumName.setText(album.getName());
+        countItems.setText(Integer.toString(album.getCount()));
+        if (album.getMainImage() != null)
+            Glide.with(context).load(album.getMainImage().getFilePath()).into(item);
+        albumView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                MainActivity.curAlbum = list.get(position);
                 Intent intent = new Intent((Activity) context, ViewAlbumActivity.class);
                 intent.putExtra("album", list.get(position));
                 ((Activity) context).startActivity(intent);
             }
         });
+        return albumView;
     }
 
 
-    @Override
-    public int getItemCount() {
-        return list.size();
-    }
-    public class ViewHolder extends RecyclerView.ViewHolder  {
-        public TextView albumName;
-        public TextView countItems;
-        public ImageView item;
-        public View itemView;
-        public ViewHolder(View itemView) {
-            super(itemView);
-            this.itemView = itemView;
-            item = itemView.findViewById(R.id.image);
-            albumName = itemView.findViewById(R.id.albumName);
-            countItems = itemView.findViewById(R.id.countItems);
-
-        }
-
-    }
 }

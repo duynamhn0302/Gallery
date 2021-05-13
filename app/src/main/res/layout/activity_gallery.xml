@@ -11,11 +11,7 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/colorPrimary"
-        android:minHeight="?attr/actionBarSize"
-        android:theme="?attr/actionBarTheme"
-        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
-        app:theme="@style/ThemeOverlay.AppCompat.Dark"
+          android:minHeight="?attr/actionBarSize"
         android:gravity="center">
 
 
@@ -24,10 +20,9 @@
     <com.google.android.material.tabs.TabLayout
         android:padding="5dp"
         android:id="@+id/tab_layout"
-        android:layout_marginHorizontal="5dp"
+        android:theme="@style/AppTheme"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/colorPrimary"
         android:layout_gravity="center_horizontal"/>
     <androidx.viewpager.widget.ViewPager
         android:id="@+id/view_pager"

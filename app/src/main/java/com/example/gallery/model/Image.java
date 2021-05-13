@@ -1,12 +1,18 @@
 package com.example.gallery.model;
 
 
+import android.content.ContentResolver;
 import android.content.ContentUris;
+import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.provider.MediaStore;
 
 import androidx.annotation.Nullable;
 
+import com.example.gallery.activity.MainActivity;
+
+import java.io.File;
 import java.io.Serializable;
 
 public class Image extends Item implements Serializable {

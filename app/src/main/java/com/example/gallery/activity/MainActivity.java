@@ -9,7 +9,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.core.content.FileProvider;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -19,34 +18,45 @@ import androidx.preference.PreferenceManager;
 import androidx.viewpager.widget.ViewPager;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentSender;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
+import android.database.ContentObserver;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.hardware.Camera;
 import android.location.Address;
 import android.location.Geocoder;
-import android.media.ExifInterface;
+import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.text.format.DateFormat;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.CheckBox;
-import android.widget.CompoundButton;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.gallery.CameraEventReceiver;
+import com.example.gallery.CopyItemsService;
+import com.example.gallery.MoveItemsService;
 import com.example.gallery.R;
 import com.example.gallery.adapter.AlbumDetailAdapter;
 import com.example.gallery.adapter.DateAdapter;
@@ -56,35 +66,48 @@ import com.example.gallery.fragment.Fragment3;
 import com.example.gallery.model.Album;
 import com.example.gallery.model.Image;
 import com.example.gallery.model.Item;
+import androidx.exifinterface.media.ExifInterface;
 import com.example.gallery.model.Video;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.reflect.Type;
-import java.net.URLConnection;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.Locale;
 
-public class MainActivity extends AppCompatActivity {
+import wseemann.media.FFmpegMediaMetadataRetriever;
+
+public class MainActivity extends BaseActivity {
+    private static final int SETTING_CODE = 1442;
+    Intent service;
+    int c = 0;
+
+    BroadcastReceiver receiver;
+    int n = 1;
+    ProgressDialog mProgressDialog;
+    static public  String language = "vi";
+    static public boolean light = true;
     private static final int REQUEST_VIDEO_CAPTURE = 111;
+    private static final int CHOOSE_ALBUM = 41;
+    private static final int CHOOSE_ALBUM_TO_MOVE = 67;
     TabLayout tabLayout;
     ViewPager viewPager;
     static public Fragment1 fragment1;
-    Fragment2 fragment2;
+    public static Fragment2 fragment2;
     Fragment3 fragment3;
+
     String[] listPermissions=new String[]{Manifest.permission.CAMERA};
     static public ArrayList<Album> albums = new ArrayList<>();
-    static public ArrayList<Item> originalItems = new ArrayList<>();
     static public ArrayList<Item> items = new ArrayList<>();
+    static public ArrayList<Item> itemsTmp = new ArrayList<>();
     public static final int PERMISSION_REQUEST_CODE = 100;
     public static final int CAMERA_PERMISSION_CODE = 300;
     public static final int UPDATED_CODE = 222;
@@ -94,20 +117,29 @@ public class MainActivity extends AppCompatActivity {
     static public MenuItem camera;
     static public MenuItem record;
     static public Menu menu;
-    static public boolean checkAllFlag = false;
-    static public boolean unCheckAllFlag = true;
+    public static String password = "";
     static public ActionBar actionBar;
     static  public boolean hideDate = false;
     static SharedPreferences.Editor prefsEditor;
     static PagerAdapter adapter;
     static public ArrayList<String> listLove = new ArrayList<>();
     public static final String MY_PREFS_NAME = "MyPrefsFile";
-    static int numCol = 4;
+    static public int numCol = 4;
     static public SharedPreferences prefs;
     static public boolean mainMode = true;
     static public Context context;
+    static public boolean deleteChange = false;
+    static public Album curAlbum = null;
+    static public MenuItem addTo;
+    static public ContentObserver contentObserver;
+    final static public String rootDir = "/storage/emulated/0/";
+    static public Album loveAlbum = new Album("Love");
+    static public Album privateAlbum = new Album("Private");
+    static public ArrayList<Item> buffer = new ArrayList<>();
+    private String privateFolder;
 
     static public void showMenu(){
+        addTo.setVisible(true);
         actionBar.setDisplayHomeAsUpEnabled(true);
         checkAll.setVisible(true);
         del.setVisible(true);
@@ -116,7 +148,7 @@ public class MainActivity extends AppCompatActivity {
         menu.setGroupVisible(R.id.group, false);
     }
     static public void hideMenu(){
-        unCheckAllFlag = true;
+        addTo.setVisible(false);
         actionBar.setDisplayHomeAsUpEnabled(false);
         checkAll.setVisible(false);
         del.setVisible(false);
@@ -139,7 +171,10 @@ public class MainActivity extends AppCompatActivity {
         del = menu.findItem(R.id.del);
         camera = menu.findItem(R.id.camera);
         record = menu.findItem(R.id.record);
+
+        addTo = menu.findItem(R.id.addTo);
         hideMenu();
+        registerReceiver(new CameraEventReceiver(), new IntentFilter(Camera.ACTION_NEW_PICTURE));
         CheckBox checkBox = (CheckBox)checkAll.getActionView();
 
         checkBox.setOnClickListener(new View.OnClickListener() {
@@ -158,24 +193,21 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
     private void deleteItems(){
-        AlbumDetailAdapter.countCheck = 0;
-        for(int i = items.size() - 1; i >= 0; i--){
-            if (items.get(i).getChecked()){
-                File file = new File(items.get(i).getFilePath());
-                if(!file.delete()){
-                    System.out.println("K xoa dc");
-                }
-                items.remove(i);
-            }
-        }
-        refesh();
+        unregist();
+           for(Item item : buffer){
+               item.delete(context, false);
+          }
+        buffer.clear();
         hideMenu();
+        loadAllFiles();
+        refesh();
         getSupportActionBar().setDisplayHomeAsUpEnabled(false);
         AlbumDetailAdapter.delMode = (AlbumDetailAdapter.delMode + 1) % 2;
+        regist();
     }
     public void showDeleteDialog() {
-        new AlertDialog.Builder(this, getTheme().hashCode())
-                .setTitle(R.string.delete_item + "?")
+        new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.delete_item ) + "?")
                 .setNegativeButton(getString(R.string.no), null)
                 .setPositiveButton(getString(R.string.delete), new DialogInterface.OnClickListener() {
                     @Override
@@ -204,6 +236,11 @@ public class MainActivity extends AppCompatActivity {
                     dispatchTakePictureIntent(false);
                 }
                 break;
+            case R.id.addTo:
+                if(MainActivity.buffer.size() == 0)
+                    break;
+                showCopyOrMove();
+                break;
             case R.id.record:
                 if(!checkPermission(Manifest.permission.CAMERA))
                 {
@@ -213,6 +250,16 @@ public class MainActivity extends AppCompatActivity {
                 }else {
                     dispatchTakePictureIntent(true);
                 }
+                break;
+            case R.id.love:
+                MainActivity.curAlbum = loveAlbum;
+                Intent intent = new Intent((Activity) context, ViewAlbumActivity.class);
+                ((Activity) context).startActivity(intent);
+                break;
+            case R.id.pri:
+                MainActivity.curAlbum = privateAlbum;
+                Intent intent1 = new Intent((Activity) context, ViewAlbumActivity.class);
+                ((Activity) context).startActivity(intent1);
                 break;
             case android.R.id.home:
                 onBackPressed();
@@ -228,6 +275,11 @@ public class MainActivity extends AppCompatActivity {
                 prefsEditor.putBoolean("hideDate", hideDate);
                 prefsEditor.apply();
                 refesh();
+                break;
+            case R.id.setting:
+                Intent i = new Intent(this, SettingsActivity.class);
+                startActivityForResult(i, SETTING_CODE);
+
                 break;
             case R.id.small:
                 numCol = AlbumDetailAdapter.small;
@@ -252,13 +304,38 @@ public class MainActivity extends AppCompatActivity {
         }
         return super.onOptionsItemSelected(item);
     }
+    void showCopyOrMove(){
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.delete_item )
 
-    static public void refesh(){
-        Fragment1 fragment1 = (Fragment1) adapter.getItem(0);
+                .setNeutralButton(R.string.cancel , null)
+                .setNegativeButton(R.string.copy , new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        Intent intent1 = new Intent(MainActivity.this, ChooseAlbum.class);
+                        startActivityForResult(intent1, CHOOSE_ALBUM);
+                    }
+                })
+                .setPositiveButton(R.string.move, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        Intent intent1 = new Intent(MainActivity.this, ChooseAlbum.class);
+                        startActivityForResult(intent1, CHOOSE_ALBUM_TO_MOVE);
+                    }
+                })
+                .create().show();
+    }
+    static  public void refesh(){
+        if(fragment1 == null || fragment2 == null)
+            return;
         fragment1.setNumCol(numCol);
         fragment1.setAdapters(getAllDateAdapter(items, context));
         fragment1.getAlbumDetailAdapter().notifyDataSetChanged();
+        fragment2.setAlbums(albums);
+        fragment2.getAdapter().notifyDataSetChanged();
+        regist();
     }
+
     public static ArrayList<DateAdapter> getAllDateAdapter(ArrayList<Item> items, Context context) {
 
         ArrayList<DateAdapter> adapters = new ArrayList<>();
@@ -268,6 +345,8 @@ public class MainActivity extends AppCompatActivity {
             String currentDate = null;
             ArrayList<Item> temp = new ArrayList<>();
             for (Item item : items) {
+                if(item == null)
+                    continue;
                 if (currentDate == null){
                     currentDate = item.getAddedDate();
                     temp.add(item);
@@ -288,7 +367,7 @@ public class MainActivity extends AppCompatActivity {
 
         }
         else{
-            adapters.add(new DateAdapter("", MainActivity.items, context));
+            adapters.add(new DateAdapter("", items, context));
         }
         return adapters;
     }
@@ -296,9 +375,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         if(AlbumDetailAdapter.delMode == 1){
-            for(Item item:items)
-                item.setChecked(false);
-            AlbumDetailAdapter.countCheck = 0;
+            buffer.clear();
             hideMenu();
             AlbumDetailAdapter.delMode = (AlbumDetailAdapter.delMode + 1) % 2;
             AlbumDetailAdapter.unCheckAll();
@@ -315,7 +392,7 @@ public class MainActivity extends AppCompatActivity {
         switch (requestCode) {
             case PERMISSION_REQUEST_CODE:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Toast.makeText(this, "Yeah external permission granted", Toast.LENGTH_SHORT).show();
+                   // Toast.makeText(this, "Yeah external permission granted", Toast.LENGTH_SHORT).show();
 
                     init();
 
@@ -333,10 +410,10 @@ public class MainActivity extends AppCompatActivity {
 
             case CAMERA_PERMISSION_CODE:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Toast.makeText(this, "Camera permission granted", Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(this, "Camera permission granted", Toast.LENGTH_SHORT).show();
                     dispatchTakePictureIntent(false);
                 } else {
-                    Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show();
+                   // Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show();
 
                 }
                 break;
@@ -360,15 +437,79 @@ public class MainActivity extends AppCompatActivity {
         String [] res = gson.fromJson(json, String[].class);
         return new ArrayList<>(Arrays.asList(res));
     }
+    private Long readLastDateFromMediaStore(Context context, Uri uri) {
+        Cursor cursor = context.getContentResolver().query(uri, null, null, null, "date_added DESC");
+
+        if (cursor.moveToNext()) {
+            Long dateAdded = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_ADDED));
+        }
+        cursor.close();
+        return null;
+    }
+    void changeLanguage (String language){
+
+        Locale locale = new Locale(language);
+        Locale.setDefault(locale);
+        Configuration configuration = new Configuration();
+        configuration.locale = locale;
+        this.getResources().updateConfiguration(configuration,
+                this.getResources().getDisplayMetrics());
+    }
+    void changeTheme(boolean light){
+        if (light) {
+            this.setTheme(R.style.LightTheme);
+        } else {
+            this.setTheme(R.style.DarkTheme);
+        }
+    }
+    static public boolean reloadPager = false;
     public void init()  {
         context = this;
+
+        contentObserver = new ContentObserver(new Handler()) {
+
+            @Override
+            public void onChange(boolean selfChange, Uri uri) {
+
+            }
+        };
+        regist();
         prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        prefs.registerOnSharedPreferenceChangeListener(new SharedPreferences.OnSharedPreferenceChangeListener() {
+            @Override
+            public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+                String l = prefs.getString("language", "vi");
+                boolean change = false;
+                if (!l.equals(language)){
+                    language = l;
+                    changeLanguage(language);
+                    change =true;
+                }
+                boolean t = prefs.getBoolean("theme", true);
+                if (t != light){
+                    light = t;
+                    changeTheme(light);
+                    change =true;
+                }
+                if (change){
+                    finish();
+                    startActivity(getIntent());
+                }
+
+            }
+        });
         prefsEditor = prefs.edit();
         listLove = getArrayList("listLove");
+        loveAlbum.setType(Album.typeLove);
+        light = prefs.getBoolean("theme", true);
+        language = prefs.getString("language" , "vi");
+        changeLanguage(language);
+        changeTheme(light);
+        setContentView(R.layout.activity_gallery);
         numCol = prefs.getInt("numCol", 4);
         hideDate = prefs.getBoolean("hideDate", false);
+        password = prefs.getString("pass", "");
         loadAllFiles();
-        originalItems.addAll(items);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         tabLayout = (TabLayout) findViewById(R.id.tab_layout);
@@ -378,18 +519,18 @@ public class MainActivity extends AppCompatActivity {
         fragment1 = new Fragment1(getAllDateAdapter(items, context), numCol);
         fragment2 = new Fragment2(albums);
         fragment3 = new Fragment3(items);
-        adapter.addFragment(fragment1, "Ảnh/Video");
+        adapter.addFragment(fragment1, getString(R.string.photo_video));
         adapter.addFragment(fragment2, "Album");
-        adapter.addFragment(fragment3, "Người");
+        adapter.addFragment(fragment3, getString(R.string.people));
         viewPager.setAdapter(adapter);
         tabLayout.setupWithViewPager(viewPager);
+
     }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_gallery);
         if(!checkPermission(this))
             requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE},1000);
         else
@@ -407,44 +548,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         return snackbar;
-    }
-
-
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-
-        super.onActivityResult(requestCode, resultCode, data);
-        if (resultCode == RESULT_OK) {
-            if (requestCode == REQUEST_IMAGE_CAPTURE || requestCode == REQUEST_VIDEO_CAPTURE) {
-                if (requestCode == REQUEST_IMAGE_CAPTURE){
-                    Bundle extras = data.getExtras();
-                    Bitmap imageBitmap = (Bitmap) extras.get("data");
-                    String name = "IMAGE_"+ new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-                    try {
-                        saveBitmap(this, imageBitmap, Bitmap.CompressFormat.JPEG, "image/jpeg",name);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-                items.add(0, newItem());
-                refesh();
-
-
-            } else if (resultCode == RESULT_CANCELED) {
-                Toast.makeText(this, "Picture was not taken", Toast.LENGTH_SHORT);
-            }
-            if (requestCode == UPDATED_CODE) {
-
-                refesh();
-
-            } else if (resultCode == RESULT_CANCELED) {
-                Toast.makeText(this, "Picture was not taken", Toast.LENGTH_SHORT);
-            }
-
-        }
-
-
     }
 
     @NonNull
@@ -488,6 +591,165 @@ public class MainActivity extends AppCompatActivity {
             throw e;
         }
     }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == RESULT_OK) {
+            if (requestCode == SETTING_CODE){
+                changeLanguage(language);
+                changeTheme(light);
+                finish();
+                startActivity(getIntent());
+            }
+            if (requestCode == REQUEST_IMAGE_CAPTURE || requestCode == REQUEST_VIDEO_CAPTURE) {
+                unregist();
+                if (requestCode == REQUEST_IMAGE_CAPTURE){
+                    Bundle extras = data.getExtras();
+                    
+                    Bitmap imageBitmap = (Bitmap) extras.get("data");
+                    String name = "IMAGE_"+ new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+                    try {
+                        saveBitmap(this, imageBitmap, Bitmap.CompressFormat.JPEG, "image/jpeg",name);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                notifyAddNewFile(newItem());
+                refesh();
+
+            }
+            if (requestCode == CHOOSE_ALBUM || requestCode == CHOOSE_ALBUM_TO_MOVE)
+            {
+                int i = data.getIntExtra("id_album_choose", -1);
+                if (i < -1)
+                    return;
+                MainActivity.unregist();
+
+                IntentFilter mainFilter;
+                if (CHOOSE_ALBUM == requestCode){
+                    service = new Intent(this, CopyItemsService.class);
+                    mainFilter = new IntentFilter("matos.action.GOSERVICE4");
+                    receiver = new MyMainLocalReceiver();
+                }
+                else{
+                    service = new Intent(this, MoveItemsService.class);
+                    mainFilter = new IntentFilter("matos.action.GOSERVICE5");
+                    receiver = new MyMainLocalReceiver2();
+                }
+
+                registerReceiver(receiver, mainFilter);
+                String nameNewAlbum = "";
+                if (i != - 1)
+                    nameNewAlbum  = MainActivity.albums.get(i).getPath();
+                else
+                    nameNewAlbum  = MainActivity.privateAlbum.getPath();
+                service.putExtra("path", nameNewAlbum);
+                startService(service);
+
+                n = MainActivity.buffer.size();
+                n = MainActivity.buffer.size();
+                mProgressDialog = new ProgressDialog(this);
+                mProgressDialog.setMessage(getString(R.string.loading));
+                mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+                mProgressDialog.setButton(ProgressDialog.BUTTON_NEGATIVE, getString(R.string.hide), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        mProgressDialog.dismiss();
+                        hideMenu();
+                    }
+                });
+                mProgressDialog.show();
+            }
+
+        }
+    }
+    private Item newItem() {
+        String[] projection = {
+                MediaStore.Files.FileColumns._ID,
+                MediaStore.Files.FileColumns.DATA,
+                MediaStore.Files.FileColumns.DATE_ADDED,
+                MediaStore.Files.FileColumns.MEDIA_TYPE,
+                MediaStore.Files.FileColumns.MIME_TYPE,
+                MediaStore.Files.FileColumns.DURATION,
+                MediaStore.Files.FileColumns.TITLE,
+                MediaStore.MediaColumns.BUCKET_DISPLAY_NAME
+        };
+
+        // Return only video and image metadata.
+        String selection = MediaStore.Files.FileColumns.MEDIA_TYPE + "="
+                + MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE
+                + " OR "
+                + MediaStore.Files.FileColumns.MEDIA_TYPE + "="
+                + MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO;
+
+        Uri queryUri = MediaStore.Files.getContentUri("external");
+
+        CursorLoader cursorLoader = new CursorLoader(
+                this,
+                queryUri,
+                projection,
+                selection,
+                null, // Selection args (none).
+                MediaStore.Files.FileColumns.DATE_ADDED + " DESC LIMIT 1" // Sort order.
+        );
+
+        Cursor cursor = cursorLoader.loadInBackground();
+        Item item = null;
+        if (cursor.moveToNext()) {
+            String absolutePathOfFile = cursor.getString(cursor.getColumnIndex(MediaStore.MediaColumns.DATA));
+            Long longDate = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_ADDED));
+            Long id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID));
+            Long durationNum = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DURATION));
+            String addedDate = DateFormat.format("dd/MM/yyyy", new Date(longDate * 1000)).toString();
+            String albumName = cursor.getString((cursor.getColumnIndex(MediaStore.MediaColumns.BUCKET_DISPLAY_NAME)));
+
+            ExifInterface exif;
+            try {
+
+                exif = new ExifInterface(absolutePathOfFile);
+                float[] latLng = new float[2];
+                exif.getLatLong(latLng);
+
+                if (Image.isImageFile(absolutePathOfFile))
+                    item = new Image(id, absolutePathOfFile, addedDate, false);
+                if (Image.isVideoFile(absolutePathOfFile)) {
+                    item = new Video(id, absolutePathOfFile, addedDate, Image.convertToDuration(durationNum), durationNum, false);
+                }
+                Album album = MainActivity.existsAlbum(albumName);
+                if (album == null) {
+                    album = new Album(albumName);
+                    MainActivity.albums.add(album);
+                }
+                album.addHead(item);
+            } catch (Exception ex) {
+                System.out.println(absolutePathOfFile);
+            }
+        }
+        cursor.close();
+        return item;
+    }
+    static public void notifyAddNewFile(Item item){
+        MainActivity.items.add(0, item);
+        ArrayList<DateAdapter> adapters = fragment1.getAlbumDetailAdapter().getList();
+        if(adapters.size()==0)
+           return;
+        Item first = adapters.get(0).getImages().get(0);
+        if (item.getAddedDate().equals(first.getAddedDate())){
+            adapters.get(0).getImages().add(0, item);
+            adapters.get(0).notifyDataSetChanged();
+        }
+        else{
+            ArrayList<Item> l = new ArrayList<>();
+            l.add(item);
+            fragment1.getAlbumDetailAdapter().getList().add(0, new DateAdapter(item.getAddedDate(), l, context));
+            fragment1.getAlbumDetailAdapter().notifyDataSetChanged();
+        }
+        fragment2.setAlbums(albums);
+        fragment2.getAdapter().notifyDataSetChanged();
+    }
+
     private void dispatchTakePictureIntent(boolean video) {
         if (video){
             Intent takeVideoIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
@@ -499,7 +761,6 @@ public class MainActivity extends AppCompatActivity {
             Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
         }
-
     }
     private class PagerAdapter extends FragmentPagerAdapter {
         ArrayList<String> titles = new ArrayList<>();
@@ -555,12 +816,12 @@ public class MainActivity extends AppCompatActivity {
         }
         return true;
     }
-    // load all files from internal storage to array items
-    public void loadAllFiles() {
+    static private Cursor read(){
         items.clear();
+        albums.clear();
         String[] projection = {
                 MediaStore.Files.FileColumns._ID,
-                MediaStore.Files.FileColumns.DATA,
+                MediaStore.MediaColumns.DATA,
                 MediaStore.Files.FileColumns.DATE_ADDED,
                 MediaStore.Files.FileColumns.MEDIA_TYPE,
                 MediaStore.Files.FileColumns.MIME_TYPE,
@@ -579,7 +840,7 @@ public class MainActivity extends AppCompatActivity {
         Uri queryUri = MediaStore.Files.getContentUri("external");
 
         CursorLoader cursorLoader = new CursorLoader(
-                this,
+                context,
                 queryUri,
                 projection,
                 selection,
@@ -588,14 +849,16 @@ public class MainActivity extends AppCompatActivity {
         );
 
         Cursor cursor = cursorLoader.loadInBackground();
+        return cursor;
+    }
+    static void load(Cursor cursor){
         while (cursor.moveToNext()) {
-            String absolutePathOfFile = cursor.getString(cursor.getColumnIndex(MediaStore.MediaColumns.DATA));
+            String absolutePathOfFile = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA));
             Long longDate = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_ADDED));
             Long id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID));
             Long durationNum = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DURATION));
             String addedDate = DateFormat.format("dd/MM/yyyy", new Date(longDate * 1000)).toString();
             String albumName = cursor.getString((cursor.getColumnIndex(MediaStore.MediaColumns.BUCKET_DISPLAY_NAME)));
-
             ExifInterface exif;
             try{
 
@@ -603,20 +866,21 @@ public class MainActivity extends AppCompatActivity {
                 float[] latLng = new float[2];
                 exif.getLatLong(latLng);
 
-                Geocoder geocoder = new Geocoder(this);
+                Geocoder geocoder = new Geocoder(context);
                 List<Address> addresses = geocoder.getFromLocation(latLng[0], latLng[1], 1);
 
-                for (Address add : addresses) {
-                    String address = addresses.get(0).getAddressLine(0);
-                }
                 boolean isLoved = isInLoveList(absolutePathOfFile, MainActivity.listLove);
+
                 Item item = null;
                 if (Image.isImageFile(absolutePathOfFile)){
                     item = new Image(id, absolutePathOfFile,  addedDate, isLoved);
+
                 }
-                if (Image.isVideoFile(absolutePathOfFile)) {
-                    item = new Video(id, absolutePathOfFile,  addedDate, Image.convertToDuration(durationNum), isLoved);
+                else if (Image.isVideoFile(absolutePathOfFile)) {
+                    item = new Video(id, absolutePathOfFile,  addedDate, Image.convertToDuration(durationNum), durationNum, isLoved);
                 }
+                if(isLoved)
+                    loveAlbum.addItem(item);
                 items.add(item);
                 Album album = existsAlbum(albumName);
                 if (album == null){
@@ -627,96 +891,152 @@ public class MainActivity extends AppCompatActivity {
 
             }
             catch (Exception ex){
-                // ex.printStackTrace();
                 System.out.println(absolutePathOfFile);
             }
         }
         cursor.close();
     }
-    boolean isInLoveList(String absolutePathOfFile, ArrayList<String> listLove){
+    static public void loadAllFiles() {
+        Cursor cursor = read();
+        load(cursor);
+        loadPrivate();
+
+    }
+    static public boolean isInLoveList(String absolutePathOfFile, ArrayList<String> listLove){
         for(String path:listLove){
             if (path.equals(absolutePathOfFile))
                 return true;
         }
         return false;
     }
-    private Item newItem()  {
-        String[] projection = {
-                MediaStore.Files.FileColumns._ID,
-                MediaStore.Files.FileColumns.DATA,
-                MediaStore.Files.FileColumns.DATE_ADDED,
-                MediaStore.Files.FileColumns.MEDIA_TYPE,
-                MediaStore.Files.FileColumns.MIME_TYPE,
-                MediaStore.Files.FileColumns.DURATION,
-                MediaStore.Files.FileColumns.TITLE
-        };
-
-        // Return only video and image metadata.
-        String selection = MediaStore.Files.FileColumns.MEDIA_TYPE + "="
-                + MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE
-                + " OR "
-                + MediaStore.Files.FileColumns.MEDIA_TYPE + "="
-                + MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO;
-
-        Uri queryUri = MediaStore.Files.getContentUri("external");
-
-        CursorLoader cursorLoader = new CursorLoader(
-                this,
-                queryUri,
-                projection,
-                selection,
-                null, // Selection args (none).
-                MediaStore.Files.FileColumns.DATE_ADDED + " DESC LIMIT 1" // Sort order.
-        );
-
-        Cursor cursor = cursorLoader.loadInBackground();
-        Item item = null;
-        if (cursor.moveToNext()) {
-            String absolutePathOfFile = cursor.getString(cursor.getColumnIndex(MediaStore.MediaColumns.DATA));
-            Long longDate = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_ADDED));
-            Long id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID));
-            Long durationNum = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DURATION));
-            String addedDate = DateFormat.format("dd/MM/yyyy", new Date(longDate * 1000)).toString();
-
-            ExifInterface exif;
-            try{
-
-                exif = new ExifInterface(absolutePathOfFile);
-                float[] latLng = new float[2];
-                exif.getLatLong(latLng);
-
-                Geocoder geocoder = new Geocoder(this);
-                List<Address> addresses = geocoder.getFromLocation(latLng[0], latLng[1], 1);
-
-                boolean isLoved = isInLoveList(absolutePathOfFile, MainActivity.listLove);
-
-                if (Image.isImageFile(absolutePathOfFile))
-                    item = new Image(id, absolutePathOfFile,  addedDate, false);
-                if (Image.isVideoFile(absolutePathOfFile)) {
-                    item = new Video(id, absolutePathOfFile,  addedDate, Image.convertToDuration(durationNum), false);
-                }
-            }
-            catch (Exception ex){
-                System.out.println(absolutePathOfFile);
-            }
-        }
-        cursor.close();
-        return item;
-    }
-    // chỗ này
-    // load all albums from internal storage to array albums
 
     // return specific album with given name
-    public Album existsAlbum(String albumName) {
+    static public Album existsAlbum(String albumName) {
         for(Album album:albums){
             if (album.getName().equals(albumName))
                 return album;
         }
         return null;
     }
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+
+        // Checks the orientation of the screen
+        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+           // setContentView(R.layout.yourxmlinlayout-land);
+        } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT){
+            //setContentView(R.layout.yourxmlinlayoutfolder);
+        }
+    }
     static void clearDelMode(){
         hideMenu();
-        AlbumDetailAdapter.countCheck = 0;
+        buffer.clear();
         AlbumDetailAdapter.delMode = 0;
+    }
+    static public void regist(){
+        context.getContentResolver().registerContentObserver(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true,
+                contentObserver);
+    }
+    static public void unregist(){
+        context.getContentResolver().unregisterContentObserver(contentObserver);
+    }
+    private String getRealPathFromURI(Uri contentUri) {
+        String[] proj = { MediaStore.Images.Media.DATA };
+        CursorLoader loader = new CursorLoader(this, contentUri, proj, null, null, null);
+        Cursor cursor = loader.loadInBackground();
+        int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+        cursor.moveToFirst();
+        String result = cursor.getString(column_index);
+        cursor.close();
+        return result;
+    }
+    public ArrayList<String> listFilesForFolder(final File folder) {
+        ArrayList<String> paths = new ArrayList<>();
+        for (final File fileEntry : folder.listFiles()) {
+            if (fileEntry.isDirectory()) {
+                listFilesForFolder(fileEntry);
+            } else {
+                paths.add(fileEntry.getAbsolutePath());
+            }
+        }
+        return  paths;
+    }
+    static public boolean checkPass(String pass){
+        return pass.equals(password);
+    }
+    static public void loadPrivate() {
+        privateAlbum.getImages().clear();
+        privateAlbum.setType(Album.typePrivate);
+        File mydir = context.getDir("myprivatefolder", Context.MODE_PRIVATE); //Creating an internal dir;
+        if (!mydir.exists()) {
+            mydir.mkdirs();
+        }
+        privateAlbum.setPath(mydir.getAbsolutePath() + "/");
+        File[] files = mydir.listFiles();
+        for (File file : files) {
+            FFmpegMediaMetadataRetriever retriever = new FFmpegMediaMetadataRetriever();
+
+            Uri uri = Uri.fromFile(file);
+            //retriever.setDataSource(file.getAbsolutePath());
+
+
+          //  String time = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+            long durationNum = 0;//Long.parseLong(retriever.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_DURATION));
+            Item item = null;
+            String path = file.getAbsolutePath();
+            String addedDate = "";//retriever.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_DATE);
+            if (Image.isImageFile(path)){
+                item = new Image(new Long(0), path,  addedDate, false);
+
+            }
+            else if (Image.isVideoFile(path)) {
+                item = new Video(new Long(0), path,  addedDate, Image.convertToDuration(durationNum), durationNum, false);
+            }
+            privateAlbum.addItem(item);
+            retriever.release();
+        }
+
+    }
+    class MyMainLocalReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context localContext, Intent callerIntent) {
+
+            int progress = callerIntent.getIntExtra("number", 0); //get the progress
+            System.out.println(progress);
+            mProgressDialog.setProgress(progress * 100 / n);
+            if (progress == n) {
+
+                AlbumDetailAdapter.delMode = (AlbumDetailAdapter.delMode + 1) % 2;
+                hideMenu();
+                MainActivity.loadAllFiles();
+                unregisterReceiver(receiver);
+                MainActivity.refesh();
+                MainActivity.regist();
+                MainActivity.buffer.clear();
+                mProgressDialog.dismiss();
+            }
+        }
+    }
+    class MyMainLocalReceiver2 extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context localContext, Intent callerIntent) {
+
+            int progress = callerIntent.getIntExtra("number", 0); //get the progress
+            System.out.println(progress);
+            mProgressDialog.setProgress(progress * 100 / n);
+            if (progress == n) {
+
+                for(Item item: MainActivity.buffer)
+                    item.delete(MainActivity.this, MainActivity.curAlbum.getType() == Album.typePrivate);
+                MainActivity.loadAllFiles();
+                unregisterReceiver(receiver);
+                MainActivity.refesh();
+                MainActivity.regist();
+                mProgressDialog.dismiss();
+                hideMenu();
+                MainActivity.buffer.clear();
+            }
+        }
     }
 }

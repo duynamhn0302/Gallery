@@ -10,7 +10,7 @@
         android:layout_margin="10dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Ngay 1/2/2021"/>
+        android:text="@string/ngay_1_2_2021"/>
     <androidx.recyclerview.widget.RecyclerView
         android:layout_margin="1dp"
         android:clipToPadding="true"

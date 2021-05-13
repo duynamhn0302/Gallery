@@ -33,7 +33,9 @@ import com.bumptech.glide.Glide;
 import com.example.gallery.R;
 import com.example.gallery.activity.InfoItemActivity;
 import com.example.gallery.activity.MainActivity;
+import com.example.gallery.activity.ViewAlbumActivity;
 import com.example.gallery.activity.ViewItemActivity;
+import com.example.gallery.model.Album;
 import com.example.gallery.model.Image;
 import com.example.gallery.model.Item;
 import com.github.chrisbanes.photoview.PhotoView;
@@ -136,6 +138,7 @@ public class ScreenSlidePageFragment extends Fragment {
 
                     settingsList.getSettingsModel(PhotoEditorSaveSettings.class).setOutputToGallery(Environment.DIRECTORY_DCIM);
 
+                    MainActivity.unregist();
                     new EditorBuilder(getActivity())
                             .setSettingsList(settingsList)
                             .startActivityForResult(getActivity(), ViewItemActivity.PESDK_RESULT);
@@ -157,7 +160,11 @@ public class ScreenSlidePageFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(getContext(), InfoItemActivity.class);
-                intent.putExtra("info", MainActivity.items.get(ViewItemActivity.viewPager.getCurrentItem()));
+                if(MainActivity.mainMode)
+                    intent.putExtra("info", MainActivity.items.get(ViewItemActivity.viewPager.getCurrentItem()));
+                else
+                    intent.putExtra("info", MainActivity.curAlbum.getImages().get(ViewItemActivity.viewPager.getCurrentItem()));
+
                 startActivity(intent);
             }
         });
@@ -193,24 +200,43 @@ public class ScreenSlidePageFragment extends Fragment {
         ImageButton love = view.findViewById(R.id.love);
         if(item.isLoved())
             love.setBackgroundColor(R.color.teal_700);
+        if (MainActivity.privateAlbum.getImages().contains(item))
+            love.setEnabled(false);
         love.setOnClickListener(new View.OnClickListener() {
             @SuppressLint("ResourceAsColor")
             @Override
             public void onClick(View v) {
-                Item curr = MainActivity.items.get(ViewItemActivity.viewPager.getCurrentItem());
+                Item curr = item;
                 if(!curr.isLoved()){
                     love.setBackgroundColor(R.color.white);
                     curr.setLoved(true);
                     MainActivity.listLove.add(curr.getFilePath());
+                    MainActivity.loveAlbum.addItem(curr);
                 }
                 else{
                     love.setBackgroundResource(0);
                     curr.setLoved(false);
+
                     for(String s: MainActivity.listLove)
                         if (s.equals(curr.getFilePath())){
                             MainActivity.listLove.remove(s);
                             break;
                         }
+                    if (MainActivity.mainMode)
+                        MainActivity.loveAlbum.getImages().remove(curr);
+                    else
+                        if ( MainActivity.mainMode == false && MainActivity.curAlbum.getType() == Album.typeLove)
+                        {
+                            //ViewAlbumActivity.refesh();
+                          //  ViewItemActivity.viewPager.setAdapter(ViewItemActivity.adapter);
+                         //   ViewItemActivity.viewPager.setCurrentItem(0);
+                            Item itemDel = ViewItemActivity.adapter.remove(ViewItemActivity.viewPager.getCurrentItem());
+                            ViewItemActivity.viewPager.setAdapter(ViewItemActivity.adapter);
+                            ViewItemActivity.viewPager.setCurrentItem(MainActivity.items.indexOf(ViewItemActivity.adapter.currentItem));
+                            MainActivity.loveAlbum.getImages().remove(curr);
+                            ViewAlbumActivity.refesh();
+                        }
+
                 }
                 MainActivity.saveArrayList(MainActivity.listLove, "listLove");
             }
@@ -220,19 +246,17 @@ public class ScreenSlidePageFragment extends Fragment {
 
 
     public void deletePhoto()  {
+        MainActivity.unregist();
         Item itemDel = ViewItemActivity.adapter.remove(ViewItemActivity.viewPager.getCurrentItem());
-        MainActivity.items.remove(itemDel);
-        File file = new File(itemDel.getFilePath());
-        boolean success = file.delete();
-        MainActivity.refesh();
+        itemDel.delete(getContext(), false);
         ViewItemActivity.viewPager.setAdapter(ViewItemActivity.adapter);
         ViewItemActivity.viewPager.setCurrentItem(MainActivity.items.indexOf(ViewItemActivity.adapter.currentItem));
-
+        MainActivity.regist();
     }
 
     public void showDeleteDialog() {
-        new AlertDialog.Builder(getContext(), R.style.Widget_MaterialComponents_ActionBar_Solid)
-                .setTitle(R.string.delete_item + "?")
+        new AlertDialog.Builder(getContext())
+                .setTitle(getString(R.string.delete_item )+ "?")
                 .setNegativeButton(getString(R.string.no), null)
                 .setPositiveButton(getString(R.string.delete), new DialogInterface.OnClickListener() {
                     @Override

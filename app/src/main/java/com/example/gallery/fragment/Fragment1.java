@@ -29,7 +29,9 @@ public class Fragment1 extends androidx.fragment.app.Fragment {
         this.adapters = adapters;
         this.numCol = numCol;
     }
-
+    public Fragment1() {
+        // Required empty public constructor
+    }
 
     public AlbumDetailAdapter getAlbumDetailAdapter() {
         return albumDetailAdapter;
@@ -40,6 +42,8 @@ public class Fragment1 extends androidx.fragment.app.Fragment {
     }
 
     public void setAdapters(ArrayList<DateAdapter> adapters) {
+        if (adapters == null)
+            return;
         this.adapters = adapters;
         albumDetailAdapter = new AlbumDetailAdapter(adapters, getContext(), numCol);
         listView.setAdapter(albumDetailAdapter);

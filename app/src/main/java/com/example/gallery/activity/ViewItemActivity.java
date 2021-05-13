@@ -1,8 +1,15 @@
 package com.example.gallery.activity;
 
 
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.app.Service;
 import android.app.WallpaperManager;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -10,7 +17,10 @@ import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.IBinder;
 import android.provider.MediaStore;
+import android.support.v4.os.ResultReceiver;
 import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.Menu;
@@ -19,14 +29,19 @@ import android.view.View;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.fragment.app.FragmentActivity;
 import androidx.loader.content.CursorLoader;
 import androidx.viewpager2.widget.ViewPager2;
 
+import com.example.gallery.CopyService;
+import com.example.gallery.MoveService;
 import com.example.gallery.R;
 import com.example.gallery.adapter.ScreenSlidePagerAdapter;
+import com.example.gallery.model.Album;
 import com.example.gallery.model.Image;
 
 import java.io.File;
@@ -34,26 +49,34 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import com.example.gallery.model.Item;
+import com.example.gallery.model.UriUtils;
+import com.example.gallery.model.Video;
+
+import org.jetbrains.annotations.NotNull;
+
 import ly.img.android.pesdk.backend.model.EditorSDKResult;
 import ly.img.android.pesdk.backend.model.state.manager.SettingsList;
+import ly.img.android.pesdk.ui.activity.ImgLyIntent;
 import ly.img.android.serializer._3.IMGLYFileWriter;
 
 
-public class ViewItemActivity extends AppCompatActivity {
+public class ViewItemActivity extends BaseActivity {
     static final public int PESDK_RESULT = 1;
+    private static final int CHOOSE_ALBUM = 12345;
     static public ViewPager2 viewPager;
-
-    Item item;
+    static Item item;
     static public ScreenSlidePagerAdapter adapter;
     static public boolean change = false;
     MenuItem copy;
     MenuItem wallpaper;
     MenuItem slideshow;
-
+    Intent service;
+    BroadcastReceiver receiver;
+    static ArrayList<Item> items = new ArrayList<>();
     @Override
     public void onBackPressed() {
         int res = change?RESULT_OK:RESULT_CANCELED;
-        setResult(res);
+        setResult(RESULT_OK);
         finish();
     }
     @Override
@@ -63,7 +86,23 @@ public class ViewItemActivity extends AppCompatActivity {
         copy = menu.findItem(R.id.copy);
         wallpaper = menu.findItem(R.id.wallpaper);
         slideshow = menu.findItem(R.id.slideshow);
+        if (!item.isImage())
+            wallpaper.setVisible(false);
+        else
+            wallpaper.setVisible(true);
+        viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            @Override
+            public void onPageSelected(int position) {
+                super.onPageSelected(position);
+                if (wallpaper == null)
+                    return;
+                if (!adapter.items.get(position).isImage())
+                    wallpaper.setVisible(false);
+                else
+                    wallpaper.setVisible(true);
 
+            }
+        });
         return true;
     }
     @Override
@@ -74,26 +113,35 @@ public class ViewItemActivity extends AppCompatActivity {
         int id = item.getItemId();
         //noinspection SimplifiableIfStatement
         switch(id){
-            case R.id.copy:
 
-                break;
             case R.id.wallpaper:
 
-
-                Item curr = MainActivity.items.get(viewPager.getCurrentItem());
+                Item curr = items.get(viewPager.getCurrentItem());
                 Bitmap bitmap = BitmapFactory.decodeFile(curr.getFilePath());
                 WallpaperManager manager = WallpaperManager.getInstance(getApplicationContext());
                 try{
                     manager.setBitmap(bitmap);
-                    Toast.makeText(this, "Wallpaper set!", Toast.LENGTH_SHORT).show();
+                   // Toast.makeText(this, "Wallpaper set!", Toast.LENGTH_SHORT).show();
                 } catch (IOException e) {
-                    Toast.makeText(this, "Error!", Toast.LENGTH_SHORT).show();
+                  //  Toast.makeText(this, "Error!", Toast.LENGTH_SHORT).show();
                 }
                 break;
             case R.id.slideshow:
                 Intent intent = new Intent(ViewItemActivity.this, SlideShow.class);
-                intent.putExtra("slideShow", MainActivity.items.get(viewPager.getCurrentItem()));
+                intent.putExtra("number", viewPager.getCurrentItem());
                 startActivity(intent);
+                break;
+            case R.id.copy:
+                MainActivity.unregist();
+                IntentFilter mainFilter = new IntentFilter("matos.action.GOSERVICE3");
+                receiver = new MyMainLocalReceiver();
+                registerReceiver(receiver, mainFilter);
+                service = new Intent(this, CopyService.class);
+                startService(service);
+                break;
+            case R.id.move:
+                Intent intent1 = new Intent(this, ChooseAlbum.class);
+                startActivityForResult(intent1, CHOOSE_ALBUM);
                 break;
             case android.R.id.home:
                 onBackPressed();
@@ -102,11 +150,14 @@ public class ViewItemActivity extends AppCompatActivity {
         }
         return super.onOptionsItemSelected(item);
     }
-
+    static Context context;
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        BaseActivity.changeLanguage(MainActivity.language, this);
+        BaseActivity.changeTheme(MainActivity.light, this);
         setContentView(R.layout.activity_item);
+        context = this;
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayShowTitleEnabled(false);
@@ -115,60 +166,80 @@ public class ViewItemActivity extends AppCompatActivity {
         viewPager = findViewById(R.id.imagesSlider);
         adapter = createScreenSlideAdapter();
         viewPager.setAdapter(adapter);
-        viewPager.setCurrentItem(MainActivity.items.indexOf(item), false);
+
+        if (MainActivity.mainMode)
+            viewPager.setCurrentItem(MainActivity.items.indexOf(item), false);
+        else
+            viewPager.setCurrentItem(MainActivity.curAlbum.getImages().indexOf(item), false);
 
 
     }
 
-    private ScreenSlidePagerAdapter createScreenSlideAdapter() {
-        ScreenSlidePagerAdapter adapter = new ScreenSlidePagerAdapter(this,  MainActivity.items, item);
+     static public ScreenSlidePagerAdapter createScreenSlideAdapter() {
+        if (MainActivity.mainMode){
+            items = MainActivity.items;
+        }
+        else
+            items = MainActivity.curAlbum.getImages();
+        ScreenSlidePagerAdapter adapter = new ScreenSlidePagerAdapter((FragmentActivity) context,  items, item);
         return adapter;
     }
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+            if (resultCode == RESULT_OK ){
+                if(requestCode == PESDK_RESULT) {
 
-        if (resultCode == RESULT_OK && requestCode == PESDK_RESULT) {
-            // Editor has saved an Image.
+                    EditorSDKResult dataa = new EditorSDKResult(data);
 
-            EditorSDKResult dataa = new EditorSDKResult(data);
+                    dataa.notifyGallery(EditorSDKResult.UPDATE_RESULT & EditorSDKResult.UPDATE_SOURCE);
+                    Uri uriSource = dataa.getSourceUri();
+                    Uri res = dataa.getResultUri();
+                    Log.i("PESDK", "Source image is located here " + uriSource);
+                    Log.i("PESDK", "Result image is located here " + res);
 
-            dataa.notifyGallery(EditorSDKResult.UPDATE_RESULT & EditorSDKResult.UPDATE_SOURCE);
-            Uri uriSource = dataa.getSourceUri();
-            Uri res = dataa.getResultUri();
-            Log.i("PESDK", "Source image is located here " + uriSource);
-            Log.i("PESDK", "Result image is located here " + res);
+                    // TODO: Do something with the result image
 
-            // TODO: Do something with the result image
+                    // OPTIONAL: read the latest state to save it as a serialisation
+                    SettingsList lastState = dataa.getSettingsList();
+                    File newFile = new File(
+                            Environment.getExternalStorageDirectory(),
+                            "serialisationReadyToReadWithPESDKFileReader.json"
+                    );
+                    try {
 
-            // OPTIONAL: read the latest state to save it as a serialisation
-            SettingsList lastState = dataa.getSettingsList();
-            File newFile = new File(
-                    Environment.getExternalStorageDirectory(),
-                    "serialisationReadyToReadWithPESDKFileReader.json"
-            );
-            try {
+                        new IMGLYFileWriter(lastState).writeJson(newFile);
+                    } catch (Exception e) { e.printStackTrace(); }
 
-                new IMGLYFileWriter(lastState).writeJson(newFile);
-            } catch (Exception e) { e.printStackTrace(); }
+                    item = newItem();
+                    MainActivity.notifyAddNewFile(item);
+                    ViewItemActivity.adapter.notifyDataSetChanged();
+                    ViewItemActivity.viewPager.setAdapter(ViewItemActivity.adapter);
+                    ViewItemActivity.viewPager.setCurrentItem(0);
+                } else if (resultCode == RESULT_CANCELED && requestCode == PESDK_RESULT) {
+                    // Editor was canceled
+                    EditorSDKResult dataa = new EditorSDKResult(data);
 
-            item = newItem();
-            MainActivity.items.add(0, item);
-            MainActivity.refesh();
-            ViewItemActivity.adapter.notifyDataSetChanged();
-            ViewItemActivity.viewPager.setAdapter(ViewItemActivity.adapter);
-            ViewItemActivity.viewPager.setCurrentItem(0);
-        } else if (resultCode == RESULT_CANCELED && requestCode == PESDK_RESULT) {
-            // Editor was canceled
-            EditorSDKResult dataa = new EditorSDKResult(data);
-
-            Uri sourceURI = dataa.getSourceUri();
-            // TODO: Do something...
-        }
-
-
+                    Uri sourceURI = dataa.getSourceUri();
+                    // TODO: Do something...
+                }
+            }
+            if (requestCode == CHOOSE_ALBUM)
+            {
+                int i = data.getIntExtra("id_album_choose", -1);
+                if (i == -1)
+                    return;
+                MainActivity.unregist();
+                Intent intent = new Intent(this, MoveService.class);
+                intent.putExtra("id_album_choose", i);
+                IntentFilter mainFilter = new IntentFilter("matos.action.GOSERVICE3");
+                receiver = new MyMainLocalReceiver();
+                registerReceiver(receiver, mainFilter);
+                startService(intent);;
+            }
     }
-    private Item newItem()  {
+
+    private Item newItem() {
         String[] projection = {
                 MediaStore.Files.FileColumns._ID,
                 MediaStore.Files.FileColumns.DATA,
@@ -176,7 +247,8 @@ public class ViewItemActivity extends AppCompatActivity {
                 MediaStore.Files.FileColumns.MEDIA_TYPE,
                 MediaStore.Files.FileColumns.MIME_TYPE,
                 MediaStore.Files.FileColumns.DURATION,
-                MediaStore.Files.FileColumns.TITLE
+                MediaStore.Files.FileColumns.TITLE,
+                MediaStore.MediaColumns.BUCKET_DISPLAY_NAME
         };
 
         // Return only video and image metadata.
@@ -205,24 +277,46 @@ public class ViewItemActivity extends AppCompatActivity {
             Long id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID));
             Long durationNum = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DURATION));
             String addedDate = DateFormat.format("dd/MM/yyyy", new Date(longDate * 1000)).toString();
+            String albumName = cursor.getString((cursor.getColumnIndex(MediaStore.MediaColumns.BUCKET_DISPLAY_NAME)));
 
             ExifInterface exif;
-            try{
+            try {
 
                 exif = new ExifInterface(absolutePathOfFile);
                 float[] latLng = new float[2];
                 exif.getLatLong(latLng);
 
-                item = new Image(id, absolutePathOfFile,  addedDate, false);
-            }
-            catch (Exception ex){
+                if (Image.isImageFile(absolutePathOfFile))
+                    item = new Image(id, absolutePathOfFile, addedDate, false);
+                if (Image.isVideoFile(absolutePathOfFile)) {
+                    item = new Video(id, absolutePathOfFile, addedDate, Image.convertToDuration(durationNum), durationNum, false);
+                }
+                Album album = MainActivity.existsAlbum(albumName);
+                if (album == null) {
+                    album = new Album(albumName);
+                    MainActivity.albums.add(album);
+                }
+                album.addHead(item);
+            } catch (Exception ex) {
                 System.out.println(absolutePathOfFile);
             }
         }
         cursor.close();
         return item;
     }
+     public class MyMainLocalReceiver extends BroadcastReceiver {
+         @Override
+         public void onReceive(Context localContext, Intent callerIntent) {
+            System.out.println("Da nhan");
 
-
+             String name = callerIntent.getStringExtra("service3Data");
+             Log.e ("MAIN>>>", "Data received from Service3: " + name);
+             Item item = newItem();
+             MainActivity.notifyAddNewFile(item);
+             MainActivity.regist();
+             if (receiver != null)
+                 unregisterReceiver(receiver);
+         }
+     }
 
 }

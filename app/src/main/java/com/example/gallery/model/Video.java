@@ -1,24 +1,37 @@
 package com.example.gallery.model;
 
 
+import android.content.ContentResolver;
 import android.content.ContentUris;
+import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.provider.MediaStore;
 
 import androidx.annotation.Nullable;
 
+import com.example.gallery.activity.MainActivity;
+
+import java.io.File;
 import java.io.Serializable;
 
 public class Video extends Item implements Serializable {
     private String duration;
+    private long durationLong;
 
-    public Video(Long id, String absolutePathOfFile, String addedDate, String convertToDuration,boolean isLoved ) {
+
+    public long getDurationLong() {
+        return durationLong;
+    }
+
+    public Video(Long id, String absolutePathOfFile, String addedDate, String convertToDuration, long durationLong, boolean isLoved ) {
         this.id = id;
         this.filePath = absolutePathOfFile;
         this.isImage = false;
         this.addedDate = addedDate;
         this.duration = convertToDuration;
         this.isLoved = isLoved;
+        this.durationLong = durationLong;
     }
 
     public Video(Uri uri) {
