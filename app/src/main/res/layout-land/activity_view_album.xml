@@ -11,17 +11,17 @@
         android:layout_height="wrap_content"
         android:minHeight="?attr/actionBarSize"
         android:gravity="center">
-        <TextView
-            android:id="@+id/albumName"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingLeft="20dp"
-            android:layout_marginBottom ="20dp"
-            android:layout_gravity="center"
-            android:textSize="30dp"
-            android:text="@string/album_name"/>
-    </androidx.appcompat.widget.Toolbar>
 
+    </androidx.appcompat.widget.Toolbar>
+    <TextView
+        android:id="@+id/albumName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="20dp"
+        android:layout_marginBottom ="20dp"
+        android:layout_gravity="center"
+        android:textSize="30dp"
+        android:text="@string/album_name"/>
     <ListView
         android:id="@+id/album"
         android:layout_width="match_parent"

@@ -108,8 +108,9 @@ public class Fragment2 extends androidx.fragment.app.Fragment {
     void showAlertInputText(){
 
         TextInputLayout textInputLayout = new TextInputLayout(getContext());
-        textInputLayout.setPadding(19,0, 19, 0);
+        textInputLayout.setPadding(60,0, 60, 0);
         EditText input = new EditText(getContext());
+        input.setBackgroundResource(android.R.color.transparent);
         textInputLayout.setHint(getString(R.string.enter_album_name));
         textInputLayout.addView(input);
         new AlertDialog.Builder(getContext())
