@@ -472,38 +472,7 @@ public class MainActivity extends BaseActivity {
             }
         };
         regist();
-        prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        prefs.registerOnSharedPreferenceChangeListener(new SharedPreferences.OnSharedPreferenceChangeListener() {
-            @Override
-            public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-                String l = prefs.getString("language", "vi");
-                boolean change = false;
-                if (!l.equals(language)){
-                    language = l;
-                    changeLanguage(language);
-                    change =true;
-                }
-                boolean t = prefs.getBoolean("theme", true);
-                if (t != light){
-                    light = t;
-                    changeTheme(light);
-                    change =true;
-                }
-                if (change){
-                    finish();
-                    startActivity(getIntent());
-                }
 
-            }
-        });
-        prefsEditor = prefs.edit();
-        listLove = getArrayList("listLove");
-        loveAlbum.setType(Album.typeLove);
-        light = prefs.getBoolean("theme", true);
-        language = prefs.getString("language" , "vi");
-        changeLanguage(language);
-        changeTheme(light);
-        setContentView(R.layout.activity_gallery);
         numCol = prefs.getInt("numCol", 4);
         hideDate = prefs.getBoolean("hideDate", false);
         password = prefs.getString("pass", "");
@@ -527,6 +496,15 @@ public class MainActivity extends BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        prefsEditor = prefs.edit();
+        listLove = getArrayList("listLove");
+        loveAlbum.setType(Album.typeLove);
+        light = prefs.getBoolean("theme", true);
+        language = prefs.getString("language" , "vi");
+        changeLanguage(language);
+        changeTheme(light);
+        setContentView(R.layout.activity_gallery);
         if(!checkPermission(this))
             requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE},1000);
         else

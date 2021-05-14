@@ -17,7 +17,7 @@
     <string name="delete_item">Xóa ảnh ?</string>
     <string name="no">Không</string>
     <string name="delete">Có</string>
-    <string name="retry">Retry</string>
+    <string name="retry">Thử lại</string>
     <string name="read_permission_denied">Không đủ quyền</string>
     <string name="your_api_key">AIzaSyBh9XzQ7607i9iMxat2m_gIRo4A3ZX7xfQ</string>
     <string name="title_activity_maps">Map</string>
