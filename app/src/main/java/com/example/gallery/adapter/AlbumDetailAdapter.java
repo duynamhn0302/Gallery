@@ -21,8 +21,6 @@ import com.example.gallery.R;
 import com.example.gallery.activity.MainActivity;
 import com.example.gallery.model.Item;
 
-import org.apache.log4j.chainsaw.Main;
-
 import java.util.ArrayList;
 
 public class AlbumDetailAdapter extends BaseAdapter {

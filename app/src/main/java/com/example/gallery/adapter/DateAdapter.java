@@ -23,8 +23,6 @@ import com.example.gallery.model.Album;
 import com.example.gallery.model.Item;
 
 
-import org.apache.log4j.chainsaw.Main;
-
 import java.util.ArrayList;
 
 public class DateAdapter extends RecyclerView.Adapter {

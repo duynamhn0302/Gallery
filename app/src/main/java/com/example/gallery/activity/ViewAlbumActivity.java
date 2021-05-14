@@ -249,13 +249,14 @@ public class ViewAlbumActivity extends BaseActivity {
             return;
         }
         MainActivity.mainMode = true;
+        MainActivity.curAlbum = null;
         MainActivity.clearDelMode();
         super.onBackPressed();
 
     }
     public void showDeleteAlbumDialog(){
             new AlertDialog.Builder(this)
-                    .setTitle(getString(R.string.delete_item ) + "?")
+                    .setTitle(getString(R.string.delete_item ) )
                     .setNegativeButton(getString(R.string.no), null)
                     .setPositiveButton(getString(R.string.delete), new DialogInterface.OnClickListener() {
                         @Override

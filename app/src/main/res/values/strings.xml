@@ -73,5 +73,7 @@
     <string name="none">Chưa có</string>
     <string name="choose_copy_move">Lựa chọn</string>
     <string name="unlock_string">Mở khóa</string>
+    <string name="exists_album">Album đã tồn tại</string>
+    <string name="setwaller">Đặt làm ảnh nền?</string>
 
 </resources>

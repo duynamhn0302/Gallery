@@ -35,7 +35,7 @@
     <string name="enter_pin_msg">Enter password to unlock</string>
     <string name="album_name">Album</string>
     <string name="album_name_small">Album</string>
-    <string name="ngay_1_2_2021">Ngay 1/2/2021</string>
+    <string name="ngay_1_2_2021"> 1/2/2021</string>
     <string name="people_name">Peopel1</string>
     <string name="language_label">Language</string>
     <string name="hide_show_date">Show/Hide date</string>
@@ -73,4 +73,6 @@
     <string name="none">None</string>
     <string name="choose_copy_move">Choose</string>
     <string name="unlock_string">Unlock</string>
+    <string name="exists_album">Existed album</string>
+    <string name="setwaller">Set waller?</string>
 </resources>

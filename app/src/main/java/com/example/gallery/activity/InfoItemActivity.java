@@ -87,6 +87,8 @@ public class InfoItemActivity extends BaseActivity{
         specification = (TextView) findViewById(R.id.specification);
         path = (TextView) findViewById(R.id.path);
         location = (TextView) findViewById(R.id.location);
+        if (!item.isImage())
+            edit.setVisibility(View.INVISIBLE);
         edit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

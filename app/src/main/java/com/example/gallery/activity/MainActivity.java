@@ -83,8 +83,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-import wseemann.media.FFmpegMediaMetadataRetriever;
-
 public class MainActivity extends BaseActivity {
     private static final int SETTING_CODE = 1442;
     Intent service;
@@ -827,7 +825,6 @@ public class MainActivity extends BaseActivity {
                 MediaStore.Files.FileColumns.TITLE,
                 MediaStore.MediaColumns.BUCKET_DISPLAY_NAME
         };
-
         // Return only video and image metadata.
         String selection = MediaStore.Files.FileColumns.MEDIA_TYPE + "="
                 + MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE
@@ -836,7 +833,6 @@ public class MainActivity extends BaseActivity {
                 + MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO;
 
         Uri queryUri = MediaStore.Files.getContentUri("external");
-
         CursorLoader cursorLoader = new CursorLoader(
                 context,
                 queryUri,
@@ -889,7 +885,15 @@ public class MainActivity extends BaseActivity {
 
             }
             catch (Exception ex){
-                System.out.println(absolutePathOfFile);
+                if (Item.isImageFile(absolutePathOfFile)){
+                    context.getContentResolver().delete(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                            MediaStore.Files.FileColumns.DATA + "=?", new String[]{absolutePathOfFile});
+                }
+                else {
+                    context.getContentResolver().delete(MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                            MediaStore.Files.FileColumns.DATA + "=?", new String[]{absolutePathOfFile});
+                }
+                ex.printStackTrace();
             }
         }
         cursor.close();
@@ -977,12 +981,9 @@ public class MainActivity extends BaseActivity {
         privateAlbum.setPath(mydir.getAbsolutePath() + "/");
         File[] files = mydir.listFiles();
         for (File file : files) {
-            FFmpegMediaMetadataRetriever retriever = new FFmpegMediaMetadataRetriever();
 
             Uri uri = Uri.fromFile(file);
             //retriever.setDataSource(file.getAbsolutePath());
-
-
           //  String time = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
             long durationNum = 0;//Long.parseLong(retriever.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_DURATION));
             Item item = null;
@@ -996,7 +997,6 @@ public class MainActivity extends BaseActivity {
                 item = new Video(new Long(0), path,  addedDate, Image.convertToDuration(durationNum), durationNum, false);
             }
             privateAlbum.addItem(item);
-            retriever.release();
         }
 
     }

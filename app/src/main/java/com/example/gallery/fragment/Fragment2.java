@@ -120,13 +120,40 @@ public class Fragment2 extends androidx.fragment.app.Fragment {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         nameNewAlbum = input.getText().toString();
-                        Intent intent = new Intent(getContext(), ChooseItem.class);
-                        startActivityForResult(intent, CHOOSE_ITEM);
+                        boolean dup = false;
+                        for(Album album : MainActivity.albums)
+                            if (album.getName().equals(nameNewAlbum)){
+                                dup = true;
+                                break;
+                            }
+                        if (dup)
+                        {
+                            showAlertDialog(getString(R.string.exists_album));
+                        }
+                        else {
+                            Intent intent = new Intent(getContext(), ChooseItem.class);
+                            startActivityForResult(intent, CHOOSE_ITEM);
+                        }
+
                     }
                 })
                 .create().show();
     }
+    private void showAlertDialog(String title){
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setTitle(title);
+        builder.setCancelable(true);
+        builder.setPositiveButton(
+                "Yes",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        dialog.cancel();
+                    }
+                });
 
+        AlertDialog alert = builder.create();
+        alert.show();
+    }
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable @org.jetbrains.annotations.Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);

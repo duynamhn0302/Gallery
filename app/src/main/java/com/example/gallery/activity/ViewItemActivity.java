@@ -34,6 +34,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.FragmentActivity;
@@ -69,6 +70,7 @@ import ly.img.android.serializer._3.IMGLYFileWriter;
 public class ViewItemActivity extends BaseActivity {
     static final public int PESDK_RESULT = 1;
     private static final int CHOOSE_ALBUM = 12345;
+    private static final int CHOOSE_ALBUM_COPY = 44;
     int n = 1;
     ProgressDialog mProgressDialog;
     static public ViewPager2 viewPager;
@@ -129,29 +131,17 @@ public class ViewItemActivity extends BaseActivity {
         switch(id){
 
             case R.id.wallpaper:
-
-                Item curr = items.get(viewPager.getCurrentItem());
-                Bitmap bitmap = BitmapFactory.decodeFile(curr.getFilePath());
-                WallpaperManager manager = WallpaperManager.getInstance(getApplicationContext());
-                try{
-                    manager.setBitmap(bitmap);
-                   // Toast.makeText(this, "Wallpaper set!", Toast.LENGTH_SHORT).show();
-                } catch (IOException e) {
-                  //  Toast.makeText(this, "Error!", Toast.LENGTH_SHORT).show();
-                }
+                showSetWallerAlbumDialog();
                 break;
+
             case R.id.slideshow:
                 Intent intent = new Intent(ViewItemActivity.this, SlideShow.class);
                 intent.putExtra("number", viewPager.getCurrentItem());
                 startActivity(intent);
                 break;
             case R.id.copy:
-                MainActivity.unregist();
-                IntentFilter mainFilter = new IntentFilter("matos.action.GOSERVICE3");
-                receiver = new MyMainLocalReceiver();
-                registerReceiver(receiver, mainFilter);
-                service = new Intent(this, CopyService.class);
-                startService(service);
+                Intent intent5 = new Intent(this, ChooseAlbum.class);
+                startActivityForResult(intent5, CHOOSE_ALBUM_COPY);
                 break;
             case R.id.move:
                 Intent intent1 = new Intent(this, ChooseAlbum.class);
@@ -165,6 +155,26 @@ public class ViewItemActivity extends BaseActivity {
             default:break;
         }
         return super.onOptionsItemSelected(item);
+    }
+    public void showSetWallerAlbumDialog(){
+        new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.setwaller))
+                .setNegativeButton(getString(R.string.no), null)
+                .setPositiveButton(getString(R.string.delete), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        Item curr = items.get(viewPager.getCurrentItem());
+                        Bitmap bitmap = BitmapFactory.decodeFile(curr.getFilePath());
+                        WallpaperManager manager = WallpaperManager.getInstance(getApplicationContext());
+                        try{
+                            manager.setBitmap(bitmap);
+                            // Toast.makeText(this, "Wallpaper set!", Toast.LENGTH_SHORT).show();
+                        } catch (IOException e) {
+                            //  Toast.makeText(this, "Error!", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                })
+                .create().show();
     }
     static Context context;
     @Override
@@ -242,6 +252,52 @@ public class ViewItemActivity extends BaseActivity {
                     // TODO: Do something...
                 }
             }
+        if (requestCode == CHOOSE_ALBUM_COPY)
+        {
+            int i = data.getIntExtra("id_album_choose", -2);
+            if (i < -1)
+                return;
+            MainActivity.unregist();
+
+            IntentFilter mainFilter;
+            service = new Intent(this, CopyItemsService.class);
+            mainFilter = new IntentFilter("matos.action.GOSERVICE4");
+            receiver = new MyMainLocalReceiver();
+
+            registerReceiver(receiver, mainFilter);
+            String nameNewAlbum = "";
+            if (i != -1)
+                nameNewAlbum = MainActivity.albums.get(i).getPath();
+            else
+                nameNewAlbum = MainActivity.privateAlbum.getPath();
+            Item curr = null;
+            if(MainActivity.mainMode){
+
+                curr = MainActivity.items.get(ViewItemActivity.viewPager.getCurrentItem());
+            }
+            else {
+                curr = adapter.items.get(ViewItemActivity.viewPager.getCurrentItem());
+            }
+            if (curr == null)
+                return;
+            MainActivity.buffer.add(curr);
+            n = MainActivity.buffer.size();
+            service.putExtra("path", nameNewAlbum);
+            startService(service);
+
+
+            mProgressDialog = new ProgressDialog(this);
+            mProgressDialog.setMessage(getString(R.string.loading));
+            mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+            mProgressDialog.setButton(ProgressDialog.BUTTON_NEGATIVE, getString(R.string.hide), new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    mProgressDialog.dismiss();
+                    finish();
+                }
+            });
+            mProgressDialog.show();
+        }
             if (requestCode == CHOOSE_ALBUM)
             {
                 int i = data.getIntExtra("id_album_choose", -2);
@@ -361,21 +417,25 @@ public class ViewItemActivity extends BaseActivity {
         return item;
     }
     class MyMainLocalReceiver extends BroadcastReceiver {
-         @Override
-         public void onReceive(Context localContext, Intent callerIntent) {
-            System.out.println("Da nhan");
+        @Override
+        public void onReceive(Context localContext, Intent callerIntent) {
 
-             String name = callerIntent.getStringExtra("service3Data");
-             Log.e ("MAIN>>>", "Data received from Service3: " + name);
-             Item item = newItem();
-             MainActivity.notifyAddNewFile(item);
-             MainActivity.refesh();
-             ViewAlbumActivity.refesh();
-             MainActivity.regist();
-             if (receiver != null)
-                 unregisterReceiver(receiver);
-         }
-     }
+            int progress = callerIntent.getIntExtra("number", 0); //get the progress
+            System.out.println(progress);
+            mProgressDialog.setProgress(progress * 100 / n);
+            if (progress == n) {
+                Item item = newItem();
+                MainActivity.loadAllFiles();
+                MainActivity.refesh();
+                ViewAlbumActivity.refesh();
+                MainActivity.regist();
+                if (receiver != null)
+                    unregisterReceiver(receiver);
+                MainActivity.buffer.clear();
+                mProgressDialog.dismiss();
+            }
+        }
+    }
     class MyMainLocalReceiver2 extends BroadcastReceiver {
         @Override
         public void onReceive(Context localContext, Intent callerIntent) {

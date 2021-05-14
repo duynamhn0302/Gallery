@@ -15,8 +15,6 @@ import com.example.gallery.fragment.Fragment2;
 import com.example.gallery.model.Album;
 import com.example.gallery.model.Item;
 
-import org.apache.log4j.chainsaw.Main;
-
 public class CopyItemsService extends Service {
 
     @Override

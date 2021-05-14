@@ -13,9 +13,6 @@
         android:layout_height="wrap_content"
           android:minHeight="?attr/actionBarSize"
         android:gravity="center">
-
-
-
     </androidx.appcompat.widget.Toolbar>
     <com.google.android.material.tabs.TabLayout
         android:padding="5dp"

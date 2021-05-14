@@ -75,10 +75,12 @@ public class ChooseAlbum extends BaseActivity {
             TextView countItems = albumView.findViewById(R.id.countItems);
             albumName.setText(album.getName());
             countItems.setText(Integer.toString(album.getCount()));
-            if (album.getMainImage() != null && album.getType() != Album.typePrivate)
-                Glide.with(context).load(album.getMainImage().getFilePath()).into(item);
-            if (album.getType() == Album.typePrivate)
-                Glide.with(context).load(R.drawable.ic_baseline_lock_242).into(item);
+            if(album.getMainImage() != null){
+                if (album.getMainImage() != null && album.getType() != Album.typePrivate)
+                    Glide.with(context).load(album.getMainImage().getFilePath()).into(item);
+                if (album.getType() == Album.typePrivate)
+                    Glide.with(context).load(R.drawable.ic_baseline_lock_242).into(item);
+            }
             albumView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {

@@ -132,7 +132,11 @@ public class ScreenSlidePageFragment extends Fragment {
                             StickerPackShapes.getStickerCategory()
                     );
                     int cur = ViewItemActivity.viewPager.getCurrentItem();
-                    File file = new File(MainActivity.items.get(cur).getFilePath());
+                    File file = null;
+                    if (MainActivity.mainMode)
+                        file = new File(MainActivity.items.get(cur).getFilePath());
+                    else file = new File(ViewItemActivity.adapter.items.get(cur).getFilePath());
+
                     Uri uri;
                     if (file.exists())
                         uri = Uri.fromFile(file);

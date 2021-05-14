@@ -4,7 +4,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
-
     <TextView
         android:id="@+id/date"
         android:layout_margin="10dp"
@@ -23,5 +22,4 @@
         android:nestedScrollingEnabled="false">
 
     </androidx.recyclerview.widget.RecyclerView>
-
 </LinearLayout>

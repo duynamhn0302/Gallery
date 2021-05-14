@@ -386,6 +386,8 @@ public abstract class Item implements Serializable {
         for(Album album : MainActivity.albums)
             if(album.getImages().contains(this)) {
                 album.getImages().remove(this);
+                if (album.getImages().size() == 0)
+                    album.setMainImage(null);
                 break;
             }
         for(String path : MainActivity.listLove)
