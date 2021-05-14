@@ -373,6 +373,13 @@ public class ViewAlbumActivity extends BaseActivity {
                 })
                 .create().show();
     }
+
+    @Override
+    public void finish() {
+        MainActivity.curAlbum = null;
+        super.finish();
+    }
+
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
 
@@ -383,6 +390,7 @@ public class ViewAlbumActivity extends BaseActivity {
             if(requestCode != CHECK_PASS && requestCode != CHANGE_PASS ){
 
                 finish();
+                return;
             }
         }
         if (requestCode == PRIVATE_ALBUM || requestCode == CREATE_PASS){

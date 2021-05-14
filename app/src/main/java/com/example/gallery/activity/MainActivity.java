@@ -591,6 +591,7 @@ public class MainActivity extends BaseActivity {
                     }
                 }
                 notifyAddNewFile(newItem());
+                loadAllFiles();
                 refesh();
 
             }

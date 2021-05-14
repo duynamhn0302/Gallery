@@ -5,7 +5,7 @@
     tools:context=".activity.GalleryActivity">
     <item
         android:id="@+id/choose"
-        android:icon="@drawable/mapbox_ic_check"
+        android:icon="@drawable/ic_baseline_check_24"
         android:title="TODO"
         app:showAsAction="always"/>
 </menu>

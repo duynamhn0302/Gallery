@@ -265,7 +265,7 @@ public class ScreenSlidePageFragment extends Fragment {
 
     public void showDeleteDialog() {
         new AlertDialog.Builder(getContext())
-                .setTitle(getString(R.string.delete_item )+ "?")
+                .setTitle(getString(R.string.delete_item ))
                 .setNegativeButton(getString(R.string.no), null)
                 .setPositiveButton(getString(R.string.delete), new DialogInterface.OnClickListener() {
                     @Override
