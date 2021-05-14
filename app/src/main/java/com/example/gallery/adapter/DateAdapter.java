@@ -112,7 +112,7 @@ public class DateAdapter extends RecyclerView.Adapter {
             Glide.with(context).load(items.get(position).getFilePath()).into(imageView);
             imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
             CheckBox check = imageViewHolder.view.findViewById(R.id.check);
-            if (AlbumDetailAdapter.delMode == 1)
+            if (AlbumDetailAdapter.delMode == true)
                 check.setVisibility(CheckBox.VISIBLE);
             else
                 check.setVisibility(CheckBox.INVISIBLE);
@@ -165,7 +165,7 @@ public class DateAdapter extends RecyclerView.Adapter {
                 @Override
                 public void onClick(View view) {
                     //Do some work here
-                    if (AlbumDetailAdapter.delMode == 1){
+                    if (AlbumDetailAdapter.delMode == true){
                         if (MainActivity.buffer.contains(items.get(position))){
                             check.setChecked(false);
                             MainActivity.buffer.remove(items.get(position));
@@ -189,8 +189,11 @@ public class DateAdapter extends RecyclerView.Adapter {
             imageViewHolder.view.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
-                    AlbumDetailAdapter.delMode = (AlbumDetailAdapter.delMode + 1) % 2;
-                    if (AlbumDetailAdapter.delMode == 1){
+                    if (AlbumDetailAdapter.delMode == false)
+                        AlbumDetailAdapter.delMode = true;
+                    else
+                        AlbumDetailAdapter.delMode = false;
+                    if (AlbumDetailAdapter.delMode == true){
                         check.setChecked(true);
                         if (!MainActivity.buffer.contains(items.get(position)))
                             MainActivity.buffer.add(items.get(position));
@@ -223,7 +226,7 @@ public class DateAdapter extends RecyclerView.Adapter {
             if (items.get(position).getDurationLong()!=0)
                 textView.setText(items.get(position).getDuration());
             CheckBox check = videoViewHolder.view.findViewById(R.id.check);
-            if (AlbumDetailAdapter.delMode == 1)
+            if (AlbumDetailAdapter.delMode == true)
                 check.setVisibility(CheckBox.VISIBLE);
             else
                 check.setVisibility(CheckBox.INVISIBLE);
@@ -278,7 +281,7 @@ public class DateAdapter extends RecyclerView.Adapter {
                 @Override
                 public void onClick(View view) {
                     //Do some work here
-                    if (AlbumDetailAdapter.delMode == 1){
+                    if (AlbumDetailAdapter.delMode == true){
                         if (MainActivity.buffer.contains(items.get(position))){
                             check.setChecked(false);
                             MainActivity.buffer.remove(items.get(position));
@@ -303,8 +306,11 @@ public class DateAdapter extends RecyclerView.Adapter {
             videoViewHolder.view.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
-                    AlbumDetailAdapter.delMode = (AlbumDetailAdapter.delMode + 1) % 2;
-                    if (AlbumDetailAdapter.delMode == 1){
+                    if (AlbumDetailAdapter.delMode == false)
+                        AlbumDetailAdapter.delMode = true;
+                    else
+                        AlbumDetailAdapter.delMode = false;
+                    if (AlbumDetailAdapter.delMode == true){
                         check.setChecked(true);
                         if (!MainActivity.buffer.contains(items.get(position)))
                             MainActivity.buffer.add(items.get(position));

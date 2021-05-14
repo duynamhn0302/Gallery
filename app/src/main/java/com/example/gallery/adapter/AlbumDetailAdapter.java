@@ -28,7 +28,7 @@ import java.util.ArrayList;
 public class AlbumDetailAdapter extends BaseAdapter {
     public ArrayList<DateAdapter> list = new ArrayList<>();
     private Context context;
-    static public  Integer delMode = 0;
+    static public  boolean delMode = false;
     static final public int small = 5;
     static final public int medium = 4;
     static final public int large = 3;

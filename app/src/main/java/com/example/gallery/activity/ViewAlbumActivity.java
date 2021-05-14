@@ -235,15 +235,15 @@ public class ViewAlbumActivity extends BaseActivity {
         MainActivity.buffer.clear();
         MainActivity.regist();
         hideMenu();
-        AlbumDetailAdapter.delMode = (AlbumDetailAdapter.delMode + 1) % 2;
+        AlbumDetailAdapter.delMode = false;
 
     }
     @Override
     public void onBackPressed() {
-        if(AlbumDetailAdapter.delMode == 1){
+        if(AlbumDetailAdapter.delMode == true){
             MainActivity.buffer.clear();
             hideMenu();
-            AlbumDetailAdapter.delMode = (AlbumDetailAdapter.delMode + 1) % 2;
+            AlbumDetailAdapter.delMode = false;
             AlbumDetailAdapter.unCheckAll();
             albumDetailAdapter.notifyDataSetChanged();
             return;
@@ -452,7 +452,7 @@ public class ViewAlbumActivity extends BaseActivity {
                 MainActivity.buffer.clear();
                 MainActivity.regist();
                 hideMenu();
-                AlbumDetailAdapter.delMode = (AlbumDetailAdapter.delMode + 1) % 2;
+                AlbumDetailAdapter.delMode =false;
                 refesh();
                 MainActivity.refesh();
                 MainActivity.regist();
@@ -478,7 +478,7 @@ public class ViewAlbumActivity extends BaseActivity {
                 MainActivity.buffer.clear();
                 MainActivity.regist();
                 hideMenu();
-                AlbumDetailAdapter.delMode = (AlbumDetailAdapter.delMode + 1) % 2;
+                AlbumDetailAdapter.delMode = false;
                 refesh();
                 MainActivity.refesh();
                 MainActivity.regist();

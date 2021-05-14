@@ -202,7 +202,7 @@ public class MainActivity extends BaseActivity {
         loadAllFiles();
         refesh();
         getSupportActionBar().setDisplayHomeAsUpEnabled(false);
-        AlbumDetailAdapter.delMode = (AlbumDetailAdapter.delMode + 1) % 2;
+        AlbumDetailAdapter.delMode = false;
         regist();
     }
     public void showDeleteDialog() {
@@ -373,10 +373,10 @@ public class MainActivity extends BaseActivity {
 
     @Override
     public void onBackPressed() {
-        if(AlbumDetailAdapter.delMode == 1){
+        if(AlbumDetailAdapter.delMode == true){
             buffer.clear();
             hideMenu();
-            AlbumDetailAdapter.delMode = (AlbumDetailAdapter.delMode + 1) % 2;
+            AlbumDetailAdapter.delMode = false;
             AlbumDetailAdapter.unCheckAll();
             fragment1.getAlbumDetailAdapter().notifyDataSetChanged();
             getSupportActionBar().setDisplayHomeAsUpEnabled(false);
@@ -934,7 +934,7 @@ public class MainActivity extends BaseActivity {
     static void clearDelMode(){
         hideMenu();
         buffer.clear();
-        AlbumDetailAdapter.delMode = 0;
+        AlbumDetailAdapter.delMode = false;
     }
     static public void regist(){
         context.getContentResolver().registerContentObserver(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true,
@@ -1009,7 +1009,7 @@ public class MainActivity extends BaseActivity {
             mProgressDialog.setProgress(progress * 100 / n);
             if (progress == n) {
 
-                AlbumDetailAdapter.delMode = (AlbumDetailAdapter.delMode + 1) % 2;
+                AlbumDetailAdapter.delMode = false;
                 hideMenu();
                 MainActivity.loadAllFiles();
                 unregisterReceiver(receiver);
@@ -1028,7 +1028,7 @@ public class MainActivity extends BaseActivity {
             System.out.println(progress);
             mProgressDialog.setProgress(progress * 100 / n);
             if (progress == n) {
-
+                AlbumDetailAdapter.delMode = false;
                 for(Item item: MainActivity.buffer)
                     item.delete(MainActivity.this, MainActivity.curAlbum.getType() == Album.typePrivate);
                 MainActivity.loadAllFiles();

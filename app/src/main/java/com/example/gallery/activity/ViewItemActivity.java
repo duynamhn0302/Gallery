@@ -244,8 +244,8 @@ public class ViewItemActivity extends BaseActivity {
             }
             if (requestCode == CHOOSE_ALBUM)
             {
-                int i = data.getIntExtra("id_album_choose", -1);
-                if (i == -1)
+                int i = data.getIntExtra("id_album_choose", -2);
+                if (i < -1)
                     return;
                 MainActivity.unregist();
 
