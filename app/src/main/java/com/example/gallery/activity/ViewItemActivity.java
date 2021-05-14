@@ -83,6 +83,7 @@ public class ViewItemActivity extends BaseActivity {
     MenuItem slideshow;
     Intent service;
     BroadcastReceiver receiver;
+    Album backUpAlbum = null;
     static ArrayList<Item> items = new ArrayList<>();
     @Override
     public void onBackPressed() {
@@ -140,6 +141,7 @@ public class ViewItemActivity extends BaseActivity {
                 startActivity(intent);
                 break;
             case R.id.copy:
+                backUpAlbum = MainActivity.curAlbum;
                 Intent intent5 = new Intent(this, ChooseAlbum.class);
                 startActivityForResult(intent5, CHOOSE_ALBUM_COPY);
                 break;
@@ -433,6 +435,7 @@ public class ViewItemActivity extends BaseActivity {
                     unregisterReceiver(receiver);
                 MainActivity.buffer.clear();
                 mProgressDialog.dismiss();
+                MainActivity.curAlbum = backUpAlbum;
             }
         }
     }

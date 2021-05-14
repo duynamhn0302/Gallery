@@ -222,6 +222,8 @@ public class ViewAlbumActivity extends BaseActivity {
         for(Item item : MainActivity.buffer){
             item.delete(context, MainActivity.curAlbum.getType() == Album.typePrivate);
         }
+        MainActivity.mainMode = true;
+        MainActivity.curAlbum = null;
         MainActivity.loadAllFiles();
         MainActivity.refesh();
         finish();
