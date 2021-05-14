@@ -78,7 +78,7 @@ public class ChooseAlbum extends BaseActivity {
             if (album.getMainImage() != null && album.getType() != Album.typePrivate)
                 Glide.with(context).load(album.getMainImage().getFilePath()).into(item);
             if (album.getType() == Album.typePrivate)
-                Glide.with(context).load(R.drawable.ic_baseline_lock_24).into(item);
+                Glide.with(context).load(R.drawable.ic_baseline_lock_242).into(item);
             albumView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {

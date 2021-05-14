@@ -68,13 +68,17 @@ import static android.app.Activity.RESULT_OK;
 
 public class ScreenSlidePageFragment extends Fragment {
     private Item item;
+    public ScreenSlidePageFragment(){
 
+    }
     public ScreenSlidePageFragment(Item item) {
         this.item = item;
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        if (item == null)
+            return null;
         if (item.isImage())
             return (ViewGroup) inflater.inflate(R.layout.image_on_slide, container, false);
         return (ViewGroup) inflater.inflate(R.layout.video_on_slide, container, false);
@@ -83,10 +87,10 @@ public class ScreenSlidePageFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        VideoView videoView = (VideoView) getView().findViewById(R.id.videoOnSlide);
-        if (videoView != null) {
-            videoView.seekTo(1);
-        }
+        //VideoView videoView = (VideoView) getView().findViewById(R.id.videoOnSlide);
+       // if (videoView != null) {
+      //      videoView.seekTo(1);
+      //  }
     }
 
     @SuppressLint("ResourceAsColor")
@@ -199,7 +203,7 @@ public class ScreenSlidePageFragment extends Fragment {
         });
         ImageButton love = view.findViewById(R.id.love);
         if(item.isLoved())
-            love.setBackgroundColor(R.color.teal_700);
+            love.setImageResource(R.drawable.ic_baseline_favorite_red_24);
         if (MainActivity.privateAlbum.getImages().contains(item))
             love.setEnabled(false);
         love.setOnClickListener(new View.OnClickListener() {
@@ -208,15 +212,16 @@ public class ScreenSlidePageFragment extends Fragment {
             public void onClick(View v) {
                 Item curr = item;
                 if(!curr.isLoved()){
-                    love.setBackgroundColor(R.color.white);
+
+                    love.setImageResource(R.drawable.ic_baseline_favorite_red_24);
                     curr.setLoved(true);
                     MainActivity.listLove.add(curr.getFilePath());
                     MainActivity.loveAlbum.addItem(curr);
                 }
                 else{
-                    love.setBackgroundResource(0);
                     curr.setLoved(false);
 
+                    love.setImageResource(R.drawable.ic_baseline_favorite_border_24);
                     for(String s: MainActivity.listLove)
                         if (s.equals(curr.getFilePath())){
                             MainActivity.listLove.remove(s);

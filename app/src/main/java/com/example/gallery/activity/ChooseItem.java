@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -34,6 +35,8 @@ import java.util.ArrayList;
 
 public class ChooseItem extends BaseActivity {
     MenuItem choose;
+    ChooseItemApdapter adapter;
+    RecyclerView recyclerView;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -44,10 +47,10 @@ public class ChooseItem extends BaseActivity {
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayShowTitleEnabled(false);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        ChooseItemApdapter adapter = new ChooseItemApdapter(MainActivity.items, this);
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recyclerView);
+        adapter = new ChooseItemApdapter(MainActivity.items, this);
+        recyclerView = (RecyclerView) findViewById(R.id.recyclerView);
         recyclerView.setAdapter(adapter);
-        GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 4);
+        GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 4 + MainActivity.padding);
         recyclerView.setLayoutManager(gridLayoutManager);
     }
     @Override
@@ -56,7 +59,24 @@ public class ChooseItem extends BaseActivity {
         getMenuInflater().inflate(R.menu.choose_items_menu, menu);
         return true;
     }
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
 
+        // Checks the orientation of the screen
+        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            MainActivity.padding = 3;
+            // setContentView(R.layout.yourxmlinlayout-land);
+        } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT){
+            MainActivity.padding = 0;
+        }
+
+        refesh();
+    }
+    void refesh(){
+        GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 4 + MainActivity.padding);
+        recyclerView.setLayoutManager(gridLayoutManager);
+    }
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
@@ -79,10 +99,10 @@ public class ChooseItem extends BaseActivity {
     }
     void showCopyOrMove(){
         new AlertDialog.Builder(this)
-                .setTitle(R.string.delete_item + "?")
+                .setTitle(getString(R.string.choose_copy_move) + "?")
 
-                .setNeutralButton("Cancel" , null)
-                .setNegativeButton("Copy" , new DialogInterface.OnClickListener() {
+                .setNeutralButton(R.string.cancel , null)
+                .setNegativeButton(R.string.copy , new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         Intent i1 = new Intent();
@@ -91,7 +111,7 @@ public class ChooseItem extends BaseActivity {
                         finish();
                     }
                 })
-                .setPositiveButton("Move", new DialogInterface.OnClickListener() {
+                .setPositiveButton(R.string.move, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         Intent i2 = new Intent();

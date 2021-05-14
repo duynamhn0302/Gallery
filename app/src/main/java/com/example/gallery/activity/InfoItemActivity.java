@@ -1,5 +1,6 @@
 package com.example.gallery.activity;
 
+import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
@@ -14,6 +15,7 @@ import android.provider.MediaStore;
 import android.text.format.DateFormat;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AlertDialog;
@@ -47,6 +49,7 @@ public class InfoItemActivity extends BaseActivity{
     TextView path;
     TextView location;
     TextView location_label;
+    ImageButton edit;
     Geocoder geocoder;
     Item item;
     ExifInterface exif = null;
@@ -78,13 +81,13 @@ public class InfoItemActivity extends BaseActivity{
         getSupportActionBar().setDisplayShowTitleEnabled(false);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         item = (Item) getIntent().getSerializableExtra("info");
-
+        edit = findViewById(R.id.edit);
         added_date = (TextView) findViewById(R.id.added_date);
         item_name = (TextView) findViewById(R.id.item_name);
         specification = (TextView) findViewById(R.id.specification);
         path = (TextView) findViewById(R.id.path);
         location = (TextView) findViewById(R.id.location);
-        location.setOnClickListener(new View.OnClickListener() {
+        edit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent i = new Intent(InfoItemActivity.this, MapsActivity.class);
@@ -99,8 +102,22 @@ public class InfoItemActivity extends BaseActivity{
         } catch (IOException e) {
             e.printStackTrace();
         }
-        double[] latLng = new double[2];
-        latLng = exif.getLatLong();
+        double[] latLng = null;
+        if (!item.isImage()){
+            /*MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+            mediaMetadataRetriever.setDataSource(item.getFilePath());
+            String locat = mediaMetadataRetriever
+                    .extractMetadata(MediaMetadataRetriever.METADATA_KEY_LOCATION);
+            if(locat != null){
+
+                int i = locat.lastIndexOf("+");
+                latLng[0] = Double.parseDouble(locat.substring(1, i));
+                latLng[1] = Double.parseDouble(locat.substring(i, locat.length()-1));
+            }*/
+        }
+
+        else
+            latLng = exif.getLatLong();
 
         //Read location details
         geocoder = new Geocoder(this);
@@ -115,7 +132,7 @@ public class InfoItemActivity extends BaseActivity{
                 }
             }
             else {
-                location.setText("none");
+                location.setText(R.string.none);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -187,12 +204,26 @@ public class InfoItemActivity extends BaseActivity{
         if (addresses.size() > 0 && addresses != null) {
             String address = addresses.get(0).getAddressLine(0);
             location.setText(address);
-            exif.setLatLong(latLng.getLatitude(), latLng.getLongitude());
-            try {
+            if (!item.isImage()){
+                Uri uri = Uri.parse(item.getFilePath());
+                ContentValues contentValues = new ContentValues();
 
-                exif.saveAttributes();
-            } catch (IOException e) {
-                e.printStackTrace();
+                contentValues.put(MediaStore.Video.VideoColumns.LATITUDE, latLng.getLatitude());
+                contentValues.put(MediaStore.Video.VideoColumns.LONGITUDE, latLng.getLongitude());
+                getContentResolver().update(
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,contentValues,
+                        MediaStore.Files.FileColumns.DATA + "=?", new String[]{item.getFilePath()});
+
+            }
+            else
+            {
+                exif.setLatLong(latLng.getLatitude(), latLng.getLongitude());
+                try {
+
+                    exif.saveAttributes();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
 
         }

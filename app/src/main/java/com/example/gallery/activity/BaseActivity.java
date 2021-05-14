@@ -44,4 +44,8 @@ public abstract class BaseActivity extends AppCompatActivity {
             context.setTheme(R.style.DarkTheme);
         }
     }
+
+    public  void onConfigurationChanged(Configuration newConfig){
+        super.onConfigurationChanged(newConfig);
+    }
 }

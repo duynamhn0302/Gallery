@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -59,11 +60,13 @@ public class ViewAlbumActivity extends BaseActivity {
     static public MenuItem del;
     static public MenuItem unlock;
     static public MenuItem addTo;
+    static public MenuItem hideDate;
     static public String name = "";
     static public MenuItem delAlbum;
     static public MenuItem changepass;
     static ActionBar actionBar;
     static public Menu menu;
+    boolean unlocked = false;
     static public Context context;
     Intent service;
     int c = 0;
@@ -84,6 +87,7 @@ public class ViewAlbumActivity extends BaseActivity {
         checkAll = menu.findItem(R.id.checkAll);
         del = menu.findItem(R.id.del);
         unlock = menu.findItem(R.id.unlock);
+        hideDate = menu.findItem(R.id.show_hideDate);
         addTo = menu.findItem(R.id.addTo);
         delAlbum = menu.findItem(R.id.delAlbum);
         changepass = menu.findItem(R.id.changepass);
@@ -152,19 +156,19 @@ public class ViewAlbumActivity extends BaseActivity {
                 
             case R.id.small:
                 MainActivity.numCol = AlbumDetailAdapter.small;
-                MainActivity.prefsEditor.putInt("numCol", MainActivity.numCol);
+                MainActivity.prefsEditor.putInt("numCol", MainActivity.numCol + MainActivity.padding);
                 MainActivity.prefsEditor.apply();
                 refesh();
                 break;
             case R.id.medium:
                 MainActivity.numCol = AlbumDetailAdapter.medium;
-                MainActivity.prefsEditor.putInt("numCol", MainActivity.numCol);
+                MainActivity.prefsEditor.putInt("numCol", MainActivity.numCol + MainActivity.padding);
                 MainActivity.prefsEditor.apply();
                 refesh();
                 break;
             case R.id.large:
                 MainActivity.numCol = AlbumDetailAdapter.large;
-                MainActivity.prefsEditor.putInt("numCol", MainActivity.numCol);
+                MainActivity.prefsEditor.putInt("numCol", MainActivity.numCol + MainActivity.padding);
                 MainActivity.prefsEditor.apply();
                 refesh();
                 break;
@@ -175,12 +179,17 @@ public class ViewAlbumActivity extends BaseActivity {
     static public void showMenu(){
         checkAll.setVisible(true);
         del.setVisible(true);
-        if (MainActivity.curAlbum.getType() == Album.typePrivate)
+        if (MainActivity.curAlbum.getType() == Album.typePrivate){
+            hideDate.setVisible(false);
             addTo.setVisible(false);
-        else
+        }
+        else{
             addTo.setVisible(true);
-        if (MainActivity.curAlbum.getType() == Album.typePrivate)
+            hideDate.setVisible(false);
+        }
+        if (MainActivity.curAlbum.getType() == Album.typePrivate){
             unlock.setVisible(true);
+        }
         else
             unlock.setVisible(false);
         menu.setGroupVisible(R.id.group, false);
@@ -192,6 +201,12 @@ public class ViewAlbumActivity extends BaseActivity {
         del.setVisible(false);
         unlock.setVisible(false);
         menu.setGroupVisible(R.id.group, true);
+        if (MainActivity.curAlbum.getType() == Album.typePrivate){
+            hideDate.setVisible(false);
+        }
+        else{
+            hideDate.setVisible(true);
+        }
         if (MainActivity.curAlbum.getType() == Album.typeLove || MainActivity.curAlbum.getType() == Album.typePrivate)
             delAlbum.setVisible(false);
         else
@@ -252,7 +267,7 @@ public class ViewAlbumActivity extends BaseActivity {
     }
     public void showDeleteDialog() {
         new AlertDialog.Builder(this)
-                .setTitle(R.string.delete_item + "?")
+                .setTitle(getString(R.string.delete_item))
                 .setNegativeButton(getString(R.string.no), null)
                 .setPositiveButton(getString(R.string.delete), new DialogInterface.OnClickListener() {
                     @Override
@@ -262,12 +277,26 @@ public class ViewAlbumActivity extends BaseActivity {
                 })
                 .create().show();
     }
+
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+
+        // Checks the orientation of the screen
+        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            MainActivity.padding = 3;
+            // setContentView(R.layout.yourxmlinlayout-land);
+        } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT){
+            MainActivity.padding = 0;
+        }
+        refesh();
+
+    }
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         BaseActivity.changeLanguage(MainActivity.language, this);
         BaseActivity.changeTheme(MainActivity.light, this);
-        if (MainActivity.curAlbum.getType() == Album.typePrivate){
+        if (MainActivity.curAlbum.getType() == Album.typePrivate && unlocked == false ){
             if (MainActivity.password.equals("")){
                 Intent i = new Intent(this, CreatePassActivity.class);
                 startActivityForResult(i, CREATE_PASS);
@@ -295,7 +324,7 @@ public class ViewAlbumActivity extends BaseActivity {
         context = this;
         this.name = MainActivity.curAlbum.getName();
         adapters = MainActivity.getAllDateAdapter(MainActivity.curAlbum.getImages(), this);
-        albumDetailAdapter = new AlbumDetailAdapter(adapters, context, MainActivity.numCol);
+        albumDetailAdapter = new AlbumDetailAdapter(adapters, context, MainActivity.numCol + MainActivity.padding);
         listView = (ListView) findViewById(R.id.album);
         listView.setAdapter(albumDetailAdapter);
     }
@@ -315,14 +344,14 @@ public class ViewAlbumActivity extends BaseActivity {
         }
 
         adapters = MainActivity.getAllDateAdapter(MainActivity.curAlbum.getImages(), context);
-        albumDetailAdapter = new AlbumDetailAdapter(adapters, context, MainActivity.numCol);
+        albumDetailAdapter = new AlbumDetailAdapter(adapters, context, MainActivity.numCol + MainActivity.padding);
         listView.setAdapter(albumDetailAdapter);
         albumDetailAdapter.notifyDataSetChanged();
 
     }
     void showCopyOrMove(){
         new AlertDialog.Builder(this)
-                .setTitle(R.string.delete_item )
+                .setTitle(getString(R.string.choose_copy_move))
 
                 .setNeutralButton( R.string.cancel, null)
                 .setNegativeButton(R.string.copy , new DialogInterface.OnClickListener() {
@@ -346,15 +375,22 @@ public class ViewAlbumActivity extends BaseActivity {
 
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == RESULT_CANCELED){
-            if(requestCode != CHECK_PASS && requestCode != CHANGE_PASS)
+            if (requestCode == CHOOSE_ALBUM)
+                return;
+            if(requestCode != CHECK_PASS && requestCode != CHANGE_PASS ){
+
                 finish();
+            }
         }
         if (requestCode == PRIVATE_ALBUM || requestCode == CREATE_PASS){
+            unlocked = true;
             init();
         }
         if (requestCode == CHECK_PASS){
-            Intent i = new Intent(this, CreatePassActivity.class);
-            startActivityForResult(i, CHANGE_PASS);
+            if (resultCode == RESULT_OK){
+                Intent i = new Intent(this, CreatePassActivity.class);
+                startActivityForResult(i, CHANGE_PASS);
+            }
         }
         if (requestCode == CHOOSE_ALBUM || requestCode == CHOOSE_ALBUM_TO_MOVE)
         {
@@ -389,7 +425,7 @@ public class ViewAlbumActivity extends BaseActivity {
             n = MainActivity.buffer.size();
             n = MainActivity.buffer.size();
             mProgressDialog = new ProgressDialog(this);
-            mProgressDialog.setMessage("Đang xử lý");
+            mProgressDialog.setMessage(getString(R.string.loading));
             mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
             mProgressDialog.setButton(ProgressDialog.BUTTON_NEGATIVE, getString(R.string.hide), new DialogInterface.OnClickListener() {
                 @Override

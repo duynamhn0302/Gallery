@@ -39,7 +39,8 @@
             android:enabled="true"
             android:exported="true" />
 
-        <activity android:name=".activity.ChooseAlbum" />
+        <activity android:name=".activity.ChooseAlbum"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.
              (See the file "res/values/google_maps_api.xml").
@@ -55,7 +56,8 @@
         <activity
             android:name=".activity.MapsActivity"
             android:label="@string/title_activity_maps" />
-        <activity android:name=".activity.IntentReceiver">
+        <activity android:name=".activity.IntentReceiver"
+            android:configChanges="orientation|screenSize|keyboardHidden">
             <intent-filter tools:ignore="AppLinkUrlError">
                 <action android:name="android.intent.action.VIEW" />
 
@@ -82,7 +84,8 @@
                 <data android:mimeType="video/*" />
             </intent-filter>
         </activity>
-        <activity android:name=".activity.MainActivity">
+        <activity android:name=".activity.MainActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -91,12 +94,18 @@
         </activity>
         <activity android:name=".activity.InfoItemActivity" />
         <activity android:name=".activity.PrivateAlbumActivity" />
-        <activity android:name=".activity.ViewAlbumActivity" />
-        <activity android:name=".activity.ViewItemActivity" />
-        <activity android:name=".activity.SlideShow" />
-        <activity android:name=".activity.ChooseItem" />
-        <activity android:name=".activity.CreatePassActivity" />
-        <activity android:name=".activity.SettingsActivity" />
+        <activity android:name=".activity.ViewAlbumActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+        <activity android:name=".activity.ViewItemActivity"
+            android:configChanges="orientation|screenSize"/>
+        <activity android:name=".activity.SlideShow"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+        <activity android:name=".activity.ChooseItem"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+        <activity android:name=".activity.CreatePassActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+        <activity android:name=".activity.SettingsActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <provider
             android:name="androidx.core.content.FileProvider"

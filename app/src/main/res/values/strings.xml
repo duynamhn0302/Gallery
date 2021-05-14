@@ -16,7 +16,7 @@
     <string name="item_detail_location_sample">TP HCM</string>
     <string name="delete_item">Xóa ảnh ?</string>
     <string name="no">Không</string>
-    <string name="delete">Yes</string>
+    <string name="delete">Có</string>
     <string name="retry">Retry</string>
     <string name="read_permission_denied">Không đủ quyền</string>
     <string name="your_api_key">AIzaSyBh9XzQ7607i9iMxat2m_gIRo4A3ZX7xfQ</string>
@@ -70,5 +70,8 @@
     <string name="save_location">Lưu địa điểm ?</string>
     <string name="Error" />
     <string name="error">error</string>
+    <string name="none">Chưa có</string>
+    <string name="choose_copy_move">Lựa chọn</string>
+    <string name="unlock_string">Mở khóa</string>
 
 </resources>

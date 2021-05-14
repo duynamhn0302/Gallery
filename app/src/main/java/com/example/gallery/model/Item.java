@@ -283,7 +283,7 @@ public abstract class Item implements Serializable {
     }
 
 
-    long getDurationLong(){
+    public long getDurationLong(){
         return 0;
     }
     static String getNameCopyOf(String filePath){

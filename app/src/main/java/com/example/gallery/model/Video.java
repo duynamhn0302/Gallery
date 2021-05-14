@@ -23,7 +23,6 @@ public class Video extends Item implements Serializable {
     public long getDurationLong() {
         return durationLong;
     }
-
     public Video(Long id, String absolutePathOfFile, String addedDate, String convertToDuration, long durationLong, boolean isLoved ) {
         this.id = id;
         this.filePath = absolutePathOfFile;

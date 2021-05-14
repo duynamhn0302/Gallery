@@ -158,7 +158,7 @@ public class Fragment2 extends androidx.fragment.app.Fragment {
 
             n = MainActivity.buffer.size();
             mProgressDialog = new ProgressDialog(getContext());
-            mProgressDialog.setMessage("Đang xử lý");
+            mProgressDialog.setMessage(getString(R.string.loading));
             mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
             mProgressDialog.setButton(ProgressDialog.BUTTON_NEGATIVE, getString(R.string.hide), new DialogInterface.OnClickListener() {
                 @Override

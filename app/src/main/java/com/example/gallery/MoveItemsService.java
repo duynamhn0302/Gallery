@@ -2,10 +2,12 @@ package com.example.gallery;
 
 import android.app.Service;
 import android.content.Intent;
+import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 
 import com.example.gallery.activity.MainActivity;
 import com.example.gallery.activity.ViewItemActivity;
@@ -24,6 +26,7 @@ public class MoveItemsService extends Service {
         a.setPath(name);
 
         new Thread(new Runnable() {
+            @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
             public void run() {
                 int count = 1;

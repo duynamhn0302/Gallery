@@ -87,17 +87,21 @@ public class DateAdapter extends RecyclerView.Adapter {
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
 
         if (position == 0){
-            int numRows = items.size() / MainActivity.numCol +  1;
-            if ( numRows > 10){
-                holder.itemView.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        ViewGroup.LayoutParams params = mRecyclerView.getLayoutParams();
-                        params.height = numRows * holder.itemView.getHeight();
-                        mRecyclerView.setLayoutParams(params);
-                    }
-                });
-            }
+            float k = (float) (1.0 * items.size() / (MainActivity.numCol + MainActivity.padding));
+            int tmp = (int)k;
+            int numRows;
+            if (tmp <k)
+                numRows = tmp + 1;
+            else
+                numRows = tmp;
+            holder.itemView.post(new Runnable() {
+                @Override
+                public void run() {
+                    ViewGroup.LayoutParams params = mRecyclerView.getLayoutParams();
+                    params.height = numRows * holder.itemView.getHeight();
+                    mRecyclerView.setLayoutParams(params);
+                }
+            });
         }
 
         if (items.get(position).isImage())
@@ -120,11 +124,10 @@ public class DateAdapter extends RecyclerView.Adapter {
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                     if(isChecked){
-                        if (!MainActivity.buffer.contains(items.get(position))){
-                            {
+                        if (!MainActivity.buffer.contains(items.get(position))) {
+
                                 MainActivity.buffer.add(items.get(position));
                             }
-
                     }
                     else {
                             if (MainActivity.buffer.contains(items.get(position))) {
@@ -134,15 +137,28 @@ public class DateAdapter extends RecyclerView.Adapter {
 
                             }
                         }
+
+
+
+                    if (MainActivity.mainMode){
+                        CheckBox checkBox = (CheckBox)MainActivity.checkAll.getActionView();
+                        if(MainActivity.buffer.size() == MainActivity.items.size()){
+                            checkBox.setChecked(true);
+                        }
+                        else{
+                            checkBox.setChecked(false);
+                        }
+                    }
+                    else {
+                        CheckBox checkBox = (CheckBox)ViewAlbumActivity.checkAll.getActionView();
+                        if(MainActivity.buffer.size() == MainActivity.curAlbum.getImages().size()){
+                            checkBox.setChecked(true);
+                        }
+                        else{
+                            checkBox.setChecked(false);
+                        }
                     }
 
-                    CheckBox checkBox = (CheckBox)MainActivity.checkAll.getActionView();
-                    if(MainActivity.buffer.size() == MainActivity.items.size()){
-                        checkBox.setChecked(true);
-                    }
-                    else{
-                        checkBox.setChecked(false);
-                    }
                 }
             });
             imageViewHolder.view.setOnClickListener(new View.OnClickListener() {
@@ -204,7 +220,8 @@ public class DateAdapter extends RecyclerView.Adapter {
             Glide.with(context).load(items.get(position).getFilePath()).into(thumbnail);
             thumbnail.setScaleType(ImageView.ScaleType.CENTER_CROP);
             TextView textView = videoViewHolder.duration;
-            textView.setText(items.get(position).getDuration());
+            if (items.get(position).getDurationLong()!=0)
+                textView.setText(items.get(position).getDuration());
             CheckBox check = videoViewHolder.view.findViewById(R.id.check);
             if (AlbumDetailAdapter.delMode == 1)
                 check.setVisibility(CheckBox.VISIBLE);
@@ -220,7 +237,7 @@ public class DateAdapter extends RecyclerView.Adapter {
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                     if(isChecked){
                         if (!MainActivity.buffer.contains(items.get(position))){
-                            {
+
                                 MainActivity.buffer.add(items.get(position));
                             }
 
@@ -232,14 +249,26 @@ public class DateAdapter extends RecyclerView.Adapter {
                                 }
 
                             }
+
+                    }
+
+                    if (MainActivity.mainMode){
+                        CheckBox checkBox = (CheckBox)MainActivity.checkAll.getActionView();
+                        if(MainActivity.buffer.size() == MainActivity.items.size()){
+                            checkBox.setChecked(true);
+                        }
+                        else{
+                            checkBox.setChecked(false);
                         }
                     }
-                    CheckBox checkBox = (CheckBox)MainActivity.checkAll.getActionView();
-                    if(MainActivity.buffer.size() == MainActivity.items.size()){
-                        checkBox.setChecked(true);
-                    }
-                    else{
-                        checkBox.setChecked(false);
+                    else {
+                        CheckBox checkBox = (CheckBox)ViewAlbumActivity.checkAll.getActionView();
+                        if(MainActivity.buffer.size() == MainActivity.curAlbum.getImages().size()){
+                            checkBox.setChecked(true);
+                        }
+                        else{
+                            checkBox.setChecked(false);
+                        }
                     }
                 }
             });

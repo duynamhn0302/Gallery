@@ -69,5 +69,8 @@
     <string name="dark">Dark</string>
     <string name="save_location">Save location ?</string>
     <string name="Error" />
-    <string name="error">error</string>
+    <string name="error">Error</string>
+    <string name="none">None</string>
+    <string name="choose_copy_move">Choose</string>
+    <string name="unlock_string">Unlock</string>
 </resources>

@@ -3,7 +3,6 @@
     <style name="LightTheme" parent="Theme.AppCompat.Light.NoActionBar"/>
     <style name="DarkTheme" parent="Theme.MaterialComponents.NoActionBar">
     </style>
-
     <style name="ToolbarTheme" parent="@style/Theme.MaterialComponents.NoActionBar">
         <!-- android:textColorPrimary is the color of the title text in the Toolbar  -->
         <item name="android:textColorPrimary">@android:color/holo_blue_light</item>

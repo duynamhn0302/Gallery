@@ -3,13 +3,16 @@ package com.example.gallery.activity;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.app.Service;
 import android.app.WallpaperManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -37,9 +40,12 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.loader.content.CursorLoader;
 import androidx.viewpager2.widget.ViewPager2;
 
+import com.example.gallery.CopyItemsService;
 import com.example.gallery.CopyService;
+import com.example.gallery.MoveItemsService;
 import com.example.gallery.MoveService;
 import com.example.gallery.R;
+import com.example.gallery.adapter.AlbumDetailAdapter;
 import com.example.gallery.adapter.ScreenSlidePagerAdapter;
 import com.example.gallery.model.Album;
 import com.example.gallery.model.Image;
@@ -63,11 +69,14 @@ import ly.img.android.serializer._3.IMGLYFileWriter;
 public class ViewItemActivity extends BaseActivity {
     static final public int PESDK_RESULT = 1;
     private static final int CHOOSE_ALBUM = 12345;
+    int n = 1;
+    ProgressDialog mProgressDialog;
     static public ViewPager2 viewPager;
     static Item item;
     static public ScreenSlidePagerAdapter adapter;
     static public boolean change = false;
     MenuItem copy;
+    MenuItem move;
     MenuItem wallpaper;
     MenuItem slideshow;
     Intent service;
@@ -86,6 +95,11 @@ public class ViewItemActivity extends BaseActivity {
         copy = menu.findItem(R.id.copy);
         wallpaper = menu.findItem(R.id.wallpaper);
         slideshow = menu.findItem(R.id.slideshow);
+        move = menu.findItem(R.id.move);
+        if (MainActivity.curAlbum != null && MainActivity.curAlbum.getType() == Album.typePrivate){
+            copy.setVisible(false);
+            move.setTitle(getString(R.string.unlock_string));
+        }
         if (!item.isImage())
             wallpaper.setVisible(false);
         else
@@ -141,6 +155,8 @@ public class ViewItemActivity extends BaseActivity {
                 break;
             case R.id.move:
                 Intent intent1 = new Intent(this, ChooseAlbum.class);
+                if (MainActivity.curAlbum != null && MainActivity.curAlbum.getType() == Album.typePrivate)
+                    intent1.putExtra("hiddenPrivate", true);
                 startActivityForResult(intent1, CHOOSE_ALBUM);
                 break;
             case android.R.id.home:
@@ -187,6 +203,8 @@ public class ViewItemActivity extends BaseActivity {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if(resultCode == RESULT_CANCELED)
+            return;
             if (resultCode == RESULT_OK ){
                 if(requestCode == PESDK_RESULT) {
 
@@ -230,15 +248,53 @@ public class ViewItemActivity extends BaseActivity {
                 if (i == -1)
                     return;
                 MainActivity.unregist();
-                Intent intent = new Intent(this, MoveService.class);
-                intent.putExtra("id_album_choose", i);
-                IntentFilter mainFilter = new IntentFilter("matos.action.GOSERVICE3");
-                receiver = new MyMainLocalReceiver();
+
+                IntentFilter mainFilter;
+                service = new Intent(this, MoveItemsService.class);
+                mainFilter = new IntentFilter("matos.action.GOSERVICE5");
+                receiver = new MyMainLocalReceiver2();
+
                 registerReceiver(receiver, mainFilter);
-                startService(intent);;
+                String nameNewAlbum = "";
+                if (i != -1)
+                    nameNewAlbum = MainActivity.albums.get(i).getPath();
+                else
+                    nameNewAlbum = MainActivity.privateAlbum.getPath();
+                Item curr = null;
+                if(MainActivity.mainMode){
+
+                    curr = MainActivity.items.get(ViewItemActivity.viewPager.getCurrentItem());
+                }
+                else {
+                    curr = adapter.items.get(ViewItemActivity.viewPager.getCurrentItem());
+                }
+                if (curr == null)
+                    return;
+                MainActivity.buffer.add(curr);
+                n = MainActivity.buffer.size();
+                service.putExtra("path", nameNewAlbum);
+                startService(service);
+
+
+                mProgressDialog = new ProgressDialog(this);
+                mProgressDialog.setMessage(getString(R.string.loading));
+                mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+                mProgressDialog.setButton(ProgressDialog.BUTTON_NEGATIVE, getString(R.string.hide), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        mProgressDialog.dismiss();
+                        finish();
+                    }
+                });
+                mProgressDialog.show();
             }
     }
 
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        finish();
+        startActivity(getIntent());
+    }
     private Item newItem() {
         String[] projection = {
                 MediaStore.Files.FileColumns._ID,
@@ -304,7 +360,7 @@ public class ViewItemActivity extends BaseActivity {
         cursor.close();
         return item;
     }
-     public class MyMainLocalReceiver extends BroadcastReceiver {
+    class MyMainLocalReceiver extends BroadcastReceiver {
          @Override
          public void onReceive(Context localContext, Intent callerIntent) {
             System.out.println("Da nhan");
@@ -313,10 +369,37 @@ public class ViewItemActivity extends BaseActivity {
              Log.e ("MAIN>>>", "Data received from Service3: " + name);
              Item item = newItem();
              MainActivity.notifyAddNewFile(item);
+             MainActivity.refesh();
+             ViewAlbumActivity.refesh();
              MainActivity.regist();
              if (receiver != null)
                  unregisterReceiver(receiver);
          }
      }
+    class MyMainLocalReceiver2 extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context localContext, Intent callerIntent) {
+
+            int progress = callerIntent.getIntExtra("number", 0); //get the progress
+            System.out.println(progress);
+            mProgressDialog.setProgress(progress * 100 / n);
+            if (progress == n) {
+                for(Item item: MainActivity.buffer)
+                    item.delete(ViewItemActivity.this, MainActivity.curAlbum.getType() == Album.typePrivate);
+                Item item = newItem();
+                MainActivity.loadAllFiles();
+                MainActivity.refesh();
+                ViewAlbumActivity.refesh();
+                MainActivity.regist();
+                if (receiver != null)
+                    unregisterReceiver(receiver);
+                MainActivity.buffer.clear();
+                mProgressDialog.dismiss();
+                finish();
+            }
+
+        }
+
+    }
 
 }

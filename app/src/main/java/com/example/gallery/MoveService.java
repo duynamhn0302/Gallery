@@ -2,7 +2,10 @@ package com.example.gallery;
 
 import android.app.Service;
 import android.content.Intent;
+import android.os.Build;
 import android.os.IBinder;
+
+import androidx.annotation.RequiresApi;
 
 import com.example.gallery.activity.MainActivity;
 import com.example.gallery.activity.ViewItemActivity;
@@ -12,15 +15,13 @@ import com.example.gallery.model.Item;
 public class MoveService extends Service {
     public MoveService() {
     }
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onStart(Intent intent, int startId) {
         super.onStart(intent, startId);
-
-                int i = intent.getIntExtra("id_album_choose", -1);
-                if (i == -1)
-                    return;
-                Album album = null;
-                album = MainActivity.albums.get(i);
+                String name = intent.getStringExtra("path");
+                Album album = new Album(name);
+                album.setPath(name);
                 Item curr = null;
                 if(MainActivity.mainMode){
                     curr = MainActivity.items.get(ViewItemActivity.viewPager.getCurrentItem());
@@ -31,7 +32,10 @@ public class MoveService extends Service {
                 String volume = "external";
                 if (MainActivity.curAlbum != null && MainActivity.curAlbum.getType() == Album.typePrivate)
                     volume = "internal";
-                curr.moveTo(album,MoveService.this, volume);
+                if (curr == null)
+                    return;
+                curr.copyTo(album, MoveService.this,volume);
+                curr.delete(MoveService.this, MainActivity.privateAlbum.getImages().contains(curr));
                 Intent intentDataForMyClient = new Intent("matos.action.GOSERVICE3");
                 intentDataForMyClient.putExtra("service3Data", "done!");
                 sendBroadcast(intentDataForMyClient);

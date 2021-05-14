@@ -137,7 +137,7 @@ public class MainActivity extends BaseActivity {
     static public Album privateAlbum = new Album("Private");
     static public ArrayList<Item> buffer = new ArrayList<>();
     private String privateFolder;
-
+    static public int padding = 0;
     static public void showMenu(){
         addTo.setVisible(true);
         actionBar.setDisplayHomeAsUpEnabled(true);
@@ -207,7 +207,7 @@ public class MainActivity extends BaseActivity {
     }
     public void showDeleteDialog() {
         new AlertDialog.Builder(this)
-                .setTitle(getString(R.string.delete_item ) + "?")
+                .setTitle(getString(R.string.delete_item ) )
                 .setNegativeButton(getString(R.string.no), null)
                 .setPositiveButton(getString(R.string.delete), new DialogInterface.OnClickListener() {
                     @Override
@@ -306,8 +306,7 @@ public class MainActivity extends BaseActivity {
     }
     void showCopyOrMove(){
         new AlertDialog.Builder(this)
-                .setTitle(R.string.delete_item )
-
+                .setTitle(getString(R.string.choose_copy_move) )
                 .setNeutralButton(R.string.cancel , null)
                 .setNegativeButton(R.string.copy , new DialogInterface.OnClickListener() {
                     @Override
@@ -328,7 +327,7 @@ public class MainActivity extends BaseActivity {
     static  public void refesh(){
         if(fragment1 == null || fragment2 == null)
             return;
-        fragment1.setNumCol(numCol);
+        fragment1.setNumCol(numCol + padding);
         fragment1.setAdapters(getAllDateAdapter(items, context));
         fragment1.getAlbumDetailAdapter().notifyDataSetChanged();
         fragment2.setAlbums(albums);
@@ -446,6 +445,7 @@ public class MainActivity extends BaseActivity {
         cursor.close();
         return null;
     }
+
     void changeLanguage (String language){
 
         Locale locale = new Locale(language);
@@ -516,12 +516,10 @@ public class MainActivity extends BaseActivity {
         viewPager = (ViewPager) findViewById(R.id.view_pager);
         adapter = new PagerAdapter(getSupportFragmentManager());
         actionBar = getSupportActionBar();
-        fragment1 = new Fragment1(getAllDateAdapter(items, context), numCol);
+        fragment1 = new Fragment1(getAllDateAdapter(items, context), numCol + MainActivity.padding);
         fragment2 = new Fragment2(albums);
-        fragment3 = new Fragment3(items);
         adapter.addFragment(fragment1, getString(R.string.photo_video));
         adapter.addFragment(fragment2, "Album");
-        adapter.addFragment(fragment3, getString(R.string.people));
         viewPager.setAdapter(adapter);
         tabLayout.setupWithViewPager(viewPager);
 
@@ -897,6 +895,7 @@ public class MainActivity extends BaseActivity {
         cursor.close();
     }
     static public void loadAllFiles() {
+        loveAlbum.getImages().clear();
         Cursor cursor = read();
         load(cursor);
         loadPrivate();
@@ -924,10 +923,13 @@ public class MainActivity extends BaseActivity {
 
         // Checks the orientation of the screen
         if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            padding = 3;
            // setContentView(R.layout.yourxmlinlayout-land);
         } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT){
-            //setContentView(R.layout.yourxmlinlayoutfolder);
+            padding = 0;
         }
+        refesh();
+
     }
     static void clearDelMode(){
         hideMenu();
